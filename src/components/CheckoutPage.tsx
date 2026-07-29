@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
-import { generateOrderId, saveOrders, loadOrders } from "../data/orders";
+import { generateOrderId, saveOrders, loadOrders, type DeliveryContent } from "../data/orders";
+import { getDigitalDelivery, isDigitalProduct } from "../data/deliveries";
 
 // ─── Helpers ───
 const formatPrice = (value: number) =>
@@ -37,7 +38,7 @@ const confettiParticles = Array.from({ length: 24 }, (_, i) => ({
 }));
 
 export default function CheckoutPage() {
-  const { items, totalItems, totalPrice, closeCheckout, clearCart } = useCart();
+  const { items, totalItems, totalPrice, closeCheckout, clearCartLocal } = useCart();
   const { user } = useAuth();
 
   // ─── Step state ───
@@ -60,6 +61,7 @@ export default function CheckoutPage() {
   const [processing, setProcessing] = useState(false);
   const [orderDone, setOrderDone] = useState(false);
   const [orderId, setOrderId] = useState("");
+  const [savedDeliveryContent, setSavedDeliveryContent] = useState<DeliveryContent[]>([]);
 
   // ─── Validation errors ───
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -97,6 +99,20 @@ export default function CheckoutPage() {
     setProcessing(true);
     await new Promise((r) => setTimeout(r, 2500));
     const newId = generateOrderId();
+
+    // Coletar delivery content para produtos digitais
+    let deliveryContent: DeliveryContent[] | undefined;
+    const digitalItems = items.filter((item) => isDigitalProduct(item.product.id));
+    if (digitalItems.length > 0) {
+      deliveryContent = [];
+      digitalItems.forEach((item) => {
+        for (let i = 0; i < item.quantity; i++) {
+          const content = getDigitalDelivery(item.product.id, i);
+          if (content) deliveryContent!.push(...content);
+        }
+      });
+    }
+
     const newOrder = {
       id: newId,
       customerName: guestName,
@@ -114,14 +130,19 @@ export default function CheckoutPage() {
       status: "pending" as const,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      ...(deliveryContent ? { deliveryContent } : {}),
     };
     saveOrders([...loadOrders(), newOrder]);
     setOrderId(newId);
     setOrderDone(true);
+    setSavedDeliveryContent(deliveryContent || []);
     setProcessing(false);
     goToStep("sucesso");
-    clearCart();
-  }, [goToStep, clearCart, guestName, email, cpf, items, totalPrice]);
+    // Limpa o carrinho LOCALMENTE (sem sync Supabase para evitar freeze)
+    clearCartLocal();
+    // Libera o scroll do body
+    document.body.style.overflow = "";
+  }, [goToStep, clearCartLocal, guestName, email, cpf, items, totalPrice]);
 
   // ─── PIX copy ───
   const handleCopyPix = useCallback(async () => {
@@ -145,11 +166,16 @@ export default function CheckoutPage() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [closeCheckout]);
 
-  // ─── Mask body scroll ───
+  // ─── Save values for success screen (before clearCart resets them) ───
+  const [savedTotalPrice, setSavedTotalPrice] = useState(totalPrice);
+  const [savedTotalItems, setSavedTotalItems] = useState(totalItems);
+
   useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
-  }, []);
+    if (!orderDone) {
+      setSavedTotalPrice(totalPrice);
+      setSavedTotalItems(totalItems);
+    }
+  }, [totalPrice, totalItems, orderDone]);
 
   // ─── Handle success close ───
   const handleCloseSuccess = useCallback((view?: string) => {
@@ -278,8 +304,9 @@ export default function CheckoutPage() {
               orderId={orderId}
               guestName={guestName}
               email={email}
-              totalPrice={totalPrice}
-              totalItems={totalItems}
+              totalPrice={savedTotalPrice}
+              totalItems={savedTotalItems}
+              deliveryContent={savedDeliveryContent}
               onClose={handleCloseSuccess}
             />
           )}
@@ -645,10 +672,11 @@ function StepProcessing() {
 // ════════════════════════════════════════════════════════════
 
 function StepSucesso({
-  orderId, guestName, email, totalPrice, totalItems, onClose,
+  orderId, guestName, email, totalPrice, totalItems, deliveryContent, onClose,
 }: {
   orderId: string; guestName: string; email: string;
   totalPrice: number; totalItems: number;
+  deliveryContent: DeliveryContent[];
   onClose: (view?: string) => void;
 }) {
   return (
@@ -744,13 +772,31 @@ function StepSucesso({
               <p className="text-xs font-medium text-text-primary">Registrado na compra</p>
             </div>
           </div>
-          <div className="flex items-start gap-2.5">
-            <Send size={13} className="text-orange-500 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-[10px] text-text-tertiary">Entrega Digital</p>
-              <p className="text-xs font-medium text-green-400">Liberado &mdash; acesse já!</p>
+          {deliveryContent.length > 0 ? (
+            <div className="flex items-start gap-2.5">
+              <Send size={13} className="text-orange-500 mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="text-[10px] text-text-tertiary">Entrega Digital</p>
+                <p className="text-xs font-medium text-green-400">Liberado &mdash; acesse já!</p>
+                <div className="mt-2 p-2 rounded-lg bg-green-500/10 border border-green-500/20 space-y-1.5">
+                  {deliveryContent.map((item, idx) => (
+                    <div key={idx} className="flex items-start gap-1.5">
+                      <span className="text-[9px] text-text-tertiary shrink-0 w-20">{item.label}:</span>
+                      <span className="text-[9px] text-text-primary font-mono break-all">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-start gap-2.5">
+              <Send size={13} className="text-orange-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[10px] text-text-tertiary">Entrega Digital</p>
+                <p className="text-xs font-medium text-green-400">Liberado &mdash; acesse já!</p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="border-t border-border/20 pt-3 space-y-2">
