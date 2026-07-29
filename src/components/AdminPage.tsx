@@ -264,11 +264,12 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
   };
 
   const handleExport = () => {
-    const blob = new Blob([JSON.stringify(products, null, 2)], { type: "application/json" });
+    const data = { products, categories };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `satoshi-products-${new Date().toISOString().split("T")[0]}.json`;
+    a.download = `satoshi-store-${new Date().toISOString().split("T")[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -283,11 +284,22 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
       try {
         const text = await file.text();
         const data = JSON.parse(text);
-        if (!Array.isArray(data)) throw new Error("Formato inválido");
-        // Basic validation
-        if (data.length > 0 && !data[0].name) throw new Error("Formato inválido");
-        saveProducts(data);
-        setProducts(data);
+        // Legacy format (array of products only)
+        if (Array.isArray(data)) {
+          if (data.length > 0 && !data[0].name) throw new Error("Formato inválido");
+          saveProducts(data);
+          setProducts(data);
+        } else if (data.products) {
+          if (!Array.isArray(data.products)) throw new Error("Formato inválido");
+          saveProducts(data.products);
+          setProducts(data.products);
+          if (Array.isArray(data.categories)) {
+            saveCategories(data.categories);
+            setCategories(data.categories);
+          }
+        } else {
+          throw new Error("Formato inválido");
+        }
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       } catch (err) {
