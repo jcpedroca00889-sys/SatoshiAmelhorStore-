@@ -7,7 +7,6 @@ import ProductsByCategory from "./components/ProductsByCategory";
 import Testimonials from "./components/Testimonials";
 import Newsletter from "./components/Newsletter";
 import Footer from "./components/Footer";
-import MouseGlow from "./components/MouseGlow";
 
 import Tutorial from "./components/Tutorial";
 import ProductPage from "./components/ProductPage";
@@ -148,7 +147,6 @@ function AppContent({ handleProductSelect, handleCloseDetail, selectedProduct }:
     <div className="relative min-h-screen bg-surface text-text-primary font-sans overflow-x-hidden">
       <BackgroundParticles />
       <ScrollProgress />
-      <MouseGlow />
       <Navbar />
       <main className="relative z-10 lg:ml-72">
         <Hero />
