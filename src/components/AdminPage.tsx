@@ -161,7 +161,7 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
   const [page, setPage] = useState(0);
   const [saved, setSaved] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<"products" | "categories">("products");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "categories">("dashboard");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -383,6 +383,16 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
           {/* Tabs */}
           <div className="flex items-center gap-1 bg-surface-3/50 rounded-xl p-0.5 border border-border/20">
             <button
+              onClick={() => setActiveTab("dashboard")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === "dashboard"
+                  ? "glass-card-3d text-orange-500"
+                  : "text-text-tertiary hover:text-text-secondary"
+              }`}
+            >
+              Dashboard
+            </button>
+            <button
               onClick={() => setActiveTab("products")}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeTab === "products"
@@ -432,6 +442,11 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Dashboard Tab */}
+        {activeTab === "dashboard" && (
+          <DashboardView products={products} categories={categories} />
+        )}
 
         {/* Products Tab */}
         {activeTab === "products" && (
@@ -1023,6 +1038,73 @@ function CategoriesManager({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+//  DASHBOARD VIEW
+// ════════════════════════════════════════════════════════════
+
+function DashboardView({ products, categories }: { products: Product[]; categories: string[] }) {
+  const catCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    products.forEach((p) => { counts[p.category] = (counts[p.category] || 0) + 1; });
+    return counts;
+  }, [products]);
+
+  const maxCount = Math.max(...Object.values(catCounts), 1);
+  const sortedCats = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="glass-card-3d rounded-2xl border border-border/20 p-5">
+          <div className="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center mb-3">
+            <Package size={18} className="text-orange-500" />
+          </div>
+          <p className="text-2xl font-bold text-text-primary">{products.length}</p>
+          <p className="text-xs text-text-tertiary mt-0.5">Produtos</p>
+        </div>
+        <div className="glass-card-3d rounded-2xl border border-border/20 p-5">
+          <div className="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center mb-3">
+            <Tags size={18} className="text-orange-500" />
+          </div>
+          <p className="text-2xl font-bold text-text-primary">{categories.length}</p>
+          <p className="text-xs text-text-tertiary mt-0.5">Categorias</p>
+        </div>
+        <div className="glass-card-3d rounded-2xl border border-border/20 p-5">
+          <div className="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center mb-3">
+            <Package size={18} className="text-orange-500" />
+          </div>
+          <p className="text-2xl font-bold text-text-primary">
+            {products.reduce((max, p) => Math.max(max, p.priceNumber), 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+          </p>
+          <p className="text-xs text-text-tertiary mt-0.5">Produto mais caro</p>
+        </div>
+      </div>
+
+      <div className="glass-card-3d rounded-2xl border border-border/20 p-5">
+        <h3 className="text-sm font-semibold text-text-primary mb-4">Distribuição por Categoria</h3>
+        {sortedCats.length === 0 ? (
+          <p className="text-xs text-text-tertiary text-center py-6">Nenhum produto cadastrado</p>
+        ) : (
+          <div className="space-y-3">
+            {sortedCats.map(([cat, count]) => (
+              <div key={cat} className="flex items-center gap-3">
+                <span className="text-xs text-text-secondary w-28 sm:w-36 truncate shrink-0">{cat}</span>
+                <div className="flex-1 h-5 rounded-lg bg-surface-3/80 overflow-hidden relative">
+                  <div
+                    className="h-full rounded-lg bg-gradient-to-r from-orange-500/60 to-orange-500 transition-all duration-500"
+                    style={{ width: `${(count / maxCount) * 100}%` }}
+                  />
+                </div>
+                <span className="text-xs text-text-tertiary w-8 text-right shrink-0">{count}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
