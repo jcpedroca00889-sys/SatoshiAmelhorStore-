@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Lock, User, Eye, EyeOff, ArrowLeft, ArrowRight,
@@ -8,29 +8,6 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import LegalModal from "./LegalModal";
 
-// ─── Floating 3D shapes in background ───
-const shapes = [
-  { icon: "◈", size: 60, x: 10, y: 15, dur: 18, float: 22, color: "text-orange-500/15" },
-  { icon: "◆", size: 40, x: 85, y: 20, dur: 22, float: 28, color: "text-orange-400/12" },
-  { icon: "⬡", size: 50, x: 75, y: 70, dur: 16, float: 20, color: "text-orange-300/10" },
-  { icon: "◇", size: 35, x: 20, y: 75, dur: 20, float: 25, color: "text-orange-400/13" },
-  { icon: "▽", size: 45, x: 50, y: 10, dur: 24, float: 30, color: "text-orange-500/10" },
-  { icon: "○", size: 30, x: 90, y: 50, dur: 19, float: 18, color: "text-orange-300/12" },
-  { icon: "□", size: 55, x: 5, y: 50, dur: 21, float: 26, color: "text-orange-400/11" },
-  { icon: "△", size: 38, x: 40, y: 85, dur: 17, float: 23, color: "text-orange-500/10" },
-];
-
-// ─── Floating particles (dots) ───
-const particles = Array.from({ length: 30 }, (_, i) => ({
-  id: i,
-  x: Math.random() * 100,
-  y: Math.random() * 100,
-  size: 1.5 + Math.random() * 3,
-  delay: Math.random() * 10,
-  dur: 10 + Math.random() * 20,
-  opacity: 0.1 + Math.random() * 0.25,
-}));
-
 // ─── Password strength ───
 function getPasswordStrength(pw: string): { score: number; label: string; color: string } {
   let score = 0;
@@ -39,7 +16,7 @@ function getPasswordStrength(pw: string): { score: number; label: string; color:
   if (/[A-Z]/.test(pw)) score++;
   if (/[0-9]/.test(pw)) score++;
   if (/[^A-Za-z0-9]/.test(pw)) score++;
-  const map = [
+  const map: { score: number; label: string; color: string }[] = [
     { score: 0, label: "Muito fraca", color: "bg-red-500" },
     { score: 1, label: "Fraca", color: "bg-red-400" },
     { score: 2, label: "Razoável", color: "bg-orange-400" },
@@ -47,7 +24,7 @@ function getPasswordStrength(pw: string): { score: number; label: string; color:
     { score: 4, label: "Forte", color: "bg-lime-400" },
     { score: 5, label: "Muito forte", color: "bg-green-400" },
   ];
-  return map[score];
+  return map[score] || map[0];
 }
 
 export default function AuthPage() {
