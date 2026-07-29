@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Plus, Pencil, Trash2, X, Download, Upload,
   ChevronLeft, ChevronRight, LogOut,
-  Save, AlertCircle, CheckCircle2, Search, Tags, Copy,
+  Save, AlertCircle, CheckCircle2, Search, Tags, Copy, AlertTriangle,
 } from "lucide-react";
 import { productsData, type Product } from "../data/products";
 
@@ -165,6 +165,9 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [confirmState, setConfirmState] = useState<{
+    title: string; message: string; onConfirm: () => void;
+  } | null>(null);
   const PER_PAGE = 10;
 
   useEffect(() => {
@@ -225,11 +228,17 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
   };
 
   const handleDelete = (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este produto?")) return;
-    const updated = products.filter((p) => p.id !== id);
-    saveProducts(updated);
-    setProducts(updated);
-    if (editing?.id === id) setEditing(null);
+    setConfirmState({
+      title: "Excluir produto",
+      message: "Tem certeza que deseja excluir este produto?",
+      onConfirm: () => {
+        const updated = products.filter((p) => p.id !== id);
+        saveProducts(updated);
+        setProducts(updated);
+        if (editing?.id === id) setEditing(null);
+        setConfirmState(null);
+      },
+    });
   };
 
   const handleSort = (field: string) => {
@@ -323,19 +332,29 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
 
   const handleDeleteCategory = (name: string) => {
     const inUse = products.filter((p) => p.category === name);
+    let message = `Deseja excluir a categoria "${name}"?`;
     if (inUse.length > 0) {
-      if (!confirm(`"${name}" está em uso por ${inUse.length} produto(s). Deseja mover esses produtos para "Outros" e excluir a categoria?`)) return;
-      const updatedProducts = products.map((p) =>
-        p.category === name ? { ...p, category: "Outros" } : p
-      );
-      saveProducts(updatedProducts);
-      setProducts(updatedProducts);
+      message = `"${name}" está em uso por ${inUse.length} produto(s). Deseja mover esses produtos para "Outros" e excluir a categoria?`;
     }
-    const updated = categories.filter((c) => c !== name);
-    saveCategories(updated);
-    setCategories(updated);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setConfirmState({
+      title: "Excluir categoria",
+      message,
+      onConfirm: () => {
+        if (inUse.length > 0) {
+          const updatedProducts = products.map((p) =>
+            p.category === name ? { ...p, category: "Outros" } : p
+          );
+          saveProducts(updatedProducts);
+          setProducts(updatedProducts);
+        }
+        const updated = categories.filter((c) => c !== name);
+        saveCategories(updated);
+        setCategories(updated);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+        setConfirmState(null);
+      },
+    });
   };
 
   return (
@@ -557,6 +576,18 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
             categories={categories}
             onSave={handleSave}
             onClose={() => { setEditing(null); setIsNew(false); }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Confirm Modal */}
+      <AnimatePresence>
+        {confirmState && (
+          <ConfirmModal
+            title={confirmState.title}
+            message={confirmState.message}
+            onConfirm={confirmState.onConfirm}
+            onCancel={() => setConfirmState(null)}
           />
         )}
       </AnimatePresence>
@@ -939,6 +970,51 @@ function CategoriesManager({
         </div>
       )}
     </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+//  CONFIRM MODAL
+// ════════════════════════════════════════════════════════════
+
+function ConfirmModal({
+  title, message, onConfirm, onCancel,
+}: {
+  title: string; message: string; onConfirm: () => void; onCancel: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 30, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 20, scale: 0.97 }}
+        className="w-full max-w-sm glass rounded-2xl border border-border/30 shadow-2xl overflow-hidden"
+      >
+        <div className="p-6 flex flex-col items-center text-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-red-500/15 flex items-center justify-center">
+            <AlertTriangle size={22} className="text-red-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
+            <p className="text-xs text-text-tertiary mt-1">{message}</p>
+          </div>
+          <div className="flex items-center gap-3 w-full">
+            <button onClick={onCancel} className="flex-1 py-2.5 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-text-primary text-sm">
+              Cancelar
+            </button>
+            <button onClick={onConfirm} className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium text-sm transition-colors">
+              Excluir
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
