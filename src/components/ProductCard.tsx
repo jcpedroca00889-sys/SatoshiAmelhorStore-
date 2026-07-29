@@ -1,6 +1,8 @@
-import { memo, useRef, useCallback } from "react";
+import { memo, useRef, useCallback, useState } from "react";
 import { motion } from "framer-motion";
-import { ShoppingBag, Star, Shield, Clock } from "lucide-react";
+import { ShoppingBag, Star, Check } from "lucide-react";
+import { useCart } from "../contexts/CartContext";
+import { productsData } from "../data/products";
 
 interface ProductCardProps {
   name: string;
@@ -15,24 +17,29 @@ interface ProductCardProps {
 
 function ProductCardComponent({ name, category, price, rating, image, color, index, onSelect }: ProductCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const { addItem } = useCart();
+  const [justAdded, setJustAdded] = useState(false);
+
+  const handleAddToCart = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Use the name to find the full product from data
+    const fullProduct = productsData.find(p => p.name === name);
+    if (fullProduct) {
+      addItem(fullProduct);
+    }
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 1200);
+  }, [addItem, name]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    const el = cardRef.current?.querySelector(".glass-card-3d") as HTMLElement | null;
+    const el = cardRef.current;
     if (el) {
       el.style.setProperty("--mouse-x", `${x}%`);
       el.style.setProperty("--mouse-y", `${y}%`);
-    }
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    const el = cardRef.current?.querySelector(".glass-card-3d") as HTMLElement | null;
-    if (el) {
-      el.style.setProperty("--mouse-x", "50%");
-      el.style.setProperty("--mouse-y", "50%");
     }
   }, []);
 
@@ -42,7 +49,6 @@ function ProductCardComponent({ name, category, price, rating, image, color, ind
     <div
       ref={cardRef}
       onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
       className="perspective-1000"
     >
       <motion.div
@@ -51,27 +57,17 @@ function ProductCardComponent({ name, category, price, rating, image, color, ind
         viewport={{ once: true, margin: "-40px" }}
         transition={{ duration: 0.5, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }}
         onClick={onSelect}
-        className="group relative cursor-pointer preserve-3d card-shine hover:z-10"
-        style={{ transformStyle: "preserve-3d" }}
+        className="group relative cursor-pointer card-shine"
       >
         <motion.div
-          className="glass-card-3d rounded-2xl overflow-hidden will-change-transform"
-          style={{ transformStyle: "preserve-3d" }}
+          className="card-minimal rounded-2xl overflow-hidden"
           whileHover={{
-            boxShadow: "0 30px 80px rgba(249,115,22,0.15), 0 10px 30px rgba(0,0,0,0.3)",
-            rotateX: 2,
-            rotateY: -2,
+            boxShadow: "0 20px 60px rgba(249,115,22,0.1), 0 8px 20px rgba(0,0,0,0.2)",
+            borderColor: "rgba(249,115,22,0.3)",
+            y: -2,
           }}
-          transition={{ type: "tween", duration: 0.4, ease: "easeOut" }}
+          transition={{ type: "tween", duration: 0.3, ease: "easeOut" }}
         >
-          {/* Glow dinâmico */}
-          <div
-            className="absolute inset-0 pointer-events-none z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 will-change-transform"
-            style={{
-              background: `radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), ${color}30 0%, transparent 60%)`,
-            }}
-          />
-
           {/* Image */}
           <div className="relative aspect-[4/3] overflow-hidden bg-surface-3">
             <div
@@ -82,7 +78,6 @@ function ProductCardComponent({ name, category, price, rating, image, color, ind
                 {image}
               </span>
             </div>
-
             <div className="absolute inset-0 bg-gradient-to-t from-surface/80 via-surface/10 to-transparent" />
 
             <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-20">
@@ -121,23 +116,67 @@ function ProductCardComponent({ name, category, price, rating, image, color, ind
               <span className="text-[10px] sm:text-xs text-text-tertiary">({rating}.0)</span>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] text-text-tertiary">
-                <Shield size={10} className="text-green-400" /> Seguro
-              </span>
-              <span className="inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] text-text-tertiary">
-                <Clock size={10} className="text-orange-400" /> Instantâneo
-              </span>
-            </div>
-
+            {/* Add to Cart Button with Animation */}
             <motion.button
-              className="w-full flex items-center justify-center gap-1.5 py-2 sm:py-2.5 rounded-xl glass-glow text-[11px] sm:text-sm font-medium text-text-secondary hover:text-orange-500 hover:border-orange-500/40 transition-colors touch-target"
-              whileHover={{ scale: 1.03, y: -1 }}
+              onClick={handleAddToCart}
+              className={`relative w-full flex items-center justify-center gap-1.5 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-sm font-medium transition-all touch-target overflow-hidden ${
+                justAdded
+                  ? "bg-green-500/15 text-green-400 border border-green-500/30"
+                  : "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 border border-orange-500/20 hover:border-orange-500/40"
+              }`}
+              whileHover={justAdded ? {} : { scale: 1.03, y: -1 }}
               whileTap={{ scale: 0.97 }}
-              onClick={(e) => e.stopPropagation()}
+              disabled={justAdded}
             >
-              <ShoppingBag size={13} className="sm:size-[15px]" />
-              Adicionar ao carrinho
+              {/* Sparkle particles */}
+              {justAdded && (
+                <>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <span
+                      key={i}
+                      className="sparkle"
+                      style={{
+                        left: `${20 + Math.random() * 60}%`,
+                        top: `${10 + Math.random() * 80}%`,
+                        backgroundColor: ["#f97316", "#fb923c", "#22c55e", "#eab308", "#a855f7", "#3b82f6"][i],
+                        animationDelay: `${i * 0.08}s`,
+                        width: `${4 + Math.random() * 4}px`,
+                        height: `${4 + Math.random() * 4}px`,
+                      }}
+                    />
+                  ))}
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <span
+                      key={`confetti-${i}`}
+                      className="confetti-piece"
+                      style={{
+                        left: `${30 + Math.random() * 40}%`,
+                        top: `${40 + Math.random() * 20}%`,
+                        backgroundColor: ["#f97316", "#fb923c", "#22c55e", "#eab308"][i],
+                        animationDelay: `${i * 0.1}s`,
+                        width: `${4 + Math.random() * 3}px`,
+                        height: `${4 + Math.random() * 3}px`,
+                      }}
+                    />
+                  ))}
+                </>
+              )}
+              {justAdded ? (
+                <motion.span
+                  key="check"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="flex items-center gap-1.5"
+                >
+                  <Check size={14} className="btn-check" />
+                  Adicionado!
+                </motion.span>
+              ) : (
+                <>
+                  <ShoppingBag size={13} className="sm:size-[15px]" />
+                  Adicionar ao carrinho
+                </>
+              )}
             </motion.button>
           </div>
         </motion.div>

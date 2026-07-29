@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { motion, useScroll, useSpring, AnimatePresence } from "framer-motion";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
@@ -30,7 +30,7 @@ function ScrollProgress() {
 
   return (
     <motion.div
-      className="fixed top-0 left-0 right-0 z-[60] h-[2px] bg-gradient-to-r from-orange-500 to-orange-300 origin-left"
+      className="fixed top-0 left-0 right-0 z-[60] h-[2px] bg-gradient-to-r from-orange-500/80 to-orange-300/60 origin-left"
       style={{ scaleY, transformOrigin: "0% 0%" }}
     />
   );
@@ -43,50 +43,16 @@ function ScrollToTop() {
   return (
     <motion.button
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      className="fixed bottom-8 right-8 z-40 w-12 h-12 rounded-2xl glass flex items-center justify-center text-text-secondary hover:text-orange-500 hover:border-orange-500/30 shadow-lg touch-target"
+      className="fixed bottom-8 right-8 z-40 w-11 h-11 rounded-xl glass text-text-secondary hover:text-orange-500 hover:border-orange-500/30 shadow-lg touch-target flex items-center justify-center"
       style={{ opacity }}
-      whileHover={{ scale: 1.12, y: -2 }}
+      whileHover={{ scale: 1.1, y: -2 }}
       whileTap={{ scale: 0.9 }}
       aria-label="Voltar ao topo"
     >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="m18 15-6-6-6 6" />
       </svg>
     </motion.button>
-  );
-}
-
-// ========== Background Particles ultra-leves (CSS em vez de framer) ==========
-function BackgroundParticles() {
-  const particles = useMemo(() =>
-    Array.from({ length: 12 }, (_, i) => ({
-      id: i,
-      left: Math.random() * 100,
-      top: Math.random() * 100,
-      size: 1.5 + Math.random() * 3,
-      delay: Math.random() * 8,
-      duration: 12 + Math.random() * 16,
-      color: i % 3 === 0 ? "bg-orange-500/10" : i % 3 === 1 ? "bg-orange-400/8" : "bg-orange-300/6",
-    })), []);
-  // CSS keyframes já definidos no index.css:
-  // .particle-float { animation: particle-float var(--dur) ease-in-out var(--delay) infinite; }
-  return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      {particles.map((p) => (
-        <div
-          key={p.id}
-          className={`absolute rounded-full ${p.color} particle-float`}
-          style={{
-            left: `${p.left}%`,
-            top: `${p.top}%`,
-            width: p.size,
-            height: p.size,
-            animationDuration: `${p.duration}s`,
-            animationDelay: `${p.delay}s`,
-          }}
-        />
-      ))}
-    </div>
   );
 }
 
@@ -183,7 +149,6 @@ function AppContent({ handleProductSelect, handleCloseDetail, selectedProduct }:
 
   return (
     <div className="relative min-h-screen bg-surface text-text-primary font-sans overflow-x-hidden">
-      <BackgroundParticles />
       <ScrollProgress />
       <Navbar />
       <main className="relative z-10 lg:ml-72">
@@ -250,27 +215,34 @@ function AppContent({ handleProductSelect, handleCloseDetail, selectedProduct }:
         )}
       </AnimatePresence>
 
-      <div className="fixed bottom-0 left-0 right-0 lg:left-72 h-32 bg-gradient-to-t from-surface to-transparent pointer-events-none z-0" />
+      <div className="fixed bottom-0 left-0 right-0 lg:left-72 h-24 bg-gradient-to-t from-surface to-transparent pointer-events-none z-0" />
 
       {/* ─── Cart Feedback Toast ─── */}
       <AnimatePresence>
         {addedItemName && (
           <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            initial={{ opacity: 0, y: 30, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="fixed bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-[100]"
+            exit={{ opacity: 0, y: 10, scale: 0.9, transition: { duration: 0.15 } }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="fixed bottom-28 lg:bottom-6 left-1/2 -translate-x-1/2 z-[100]"
           >
-            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl glass border border-green-500/30 bg-green-500/10 shadow-2xl shadow-green-500/10 backdrop-blur-xl whitespace-nowrap">
-              <div className="w-8 h-8 rounded-xl bg-green-500/20 flex items-center justify-center">
-                <CheckCircle2 size={16} className="text-green-400" />
+            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl glass-premium border border-green-500/20 shadow-xl shadow-green-500/5 whitespace-nowrap">
+              <div className="relative w-9 h-9 rounded-xl bg-green-500/15 flex items-center justify-center overflow-hidden">
+                <motion.div
+                  key={addedItemName + "-check"}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                >
+                  <CheckCircle2 size={18} className="text-green-400" />
+                </motion.div>
               </div>
               <div className="text-left">
-                <p className="text-xs font-semibold text-green-400">Adicionado ao carrinho!</p>
-                <p className="text-[10px] text-text-tertiary max-w-[200px] truncate">{addedItemName}</p>
+                <p className="text-xs font-semibold text-green-400">Adicionado ao carrinho! 🎉</p>
+                <p className="text-[11px] text-text-tertiary max-w-[200px] truncate">{addedItemName}</p>
               </div>
-              <button onClick={clearAddedFeedback} className="p-1 rounded-lg text-text-tertiary hover:text-text-primary transition-colors">
+              <button onClick={clearAddedFeedback} className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-surface-3/50 transition-colors">
                 <X size={14} />
               </button>
             </div>

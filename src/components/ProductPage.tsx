@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Star, Heart, Share2, ShoppingBag, Check, Shield,
   ChevronDown, ChevronUp, Minus, Plus, ArrowLeft, Package,
-  RefreshCw, MessageCircle, Award, Clock, MessageSquare,
+  RefreshCw, MessageCircle, Award, Clock,
 } from "lucide-react";
 import type { Product } from "../data/products";
 import { productsData } from "../data/products";
@@ -27,6 +27,7 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
   const { addItem } = useCart();
   const { user } = useAuth();
 
@@ -46,6 +47,12 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
     { key: "reviews", label: "Reviews", count: reviews.length },
   ];
 
+  const handleAddToCart = useCallback(() => {
+    addItem(product, quantity);
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 1200);
+  }, [addItem, product, quantity]);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -55,11 +62,11 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
       className="fixed inset-0 z-[70] bg-surface overflow-y-auto"
     >
       {/* Top Bar */}
-      <div className="sticky top-0 z-30 glass-premium border-b border-border/50">
+      <div className="sticky top-0 z-30 bg-surface/80 backdrop-blur-xl border-b border-border/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
           <button
             onClick={onClose}
-            className="flex items-center gap-2 text-text-secondary hover:text-orange-500 glass-card-3d card-shine transition-colors touch-target"
+            className="flex items-center gap-2 text-text-secondary hover:text-orange-500 transition-colors touch-target"
           >
             <ArrowLeft size={18} />
             <span className="text-sm font-medium hidden sm:inline">Voltar</span>
@@ -68,12 +75,12 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
           <div className="flex items-center gap-2">
             <motion.button
               onClick={() => setIsFavorite(!isFavorite)}
-              className={`p-2 rounded-xl glass-card-3d card-shine transition-all touch-target ${isFavorite ? "text-red-500" : "text-text-secondary hover:text-red-400"}`}
+              className={`p-2 rounded-xl transition-all touch-target ${isFavorite ? "text-red-500 bg-red-500/10" : "text-text-secondary hover:text-red-400 hover:bg-red-500/5"}`}
               whileTap={{ scale: 0.9 }}
             >
               <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
             </motion.button>
-            <motion.button className="p-2 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-orange-500 transition-colors touch-target" whileTap={{ scale: 0.9 }}>
+            <motion.button className="p-2 rounded-xl text-text-secondary hover:text-orange-500 hover:bg-orange-500/5 transition-colors touch-target" whileTap={{ scale: 0.9 }}>
               <Share2 size={18} />
             </motion.button>
           </div>
@@ -86,7 +93,7 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
         <div className="flex items-center gap-2 text-xs sm:text-sm text-text-tertiary mb-4 sm:mb-6">
           <button onClick={onClose} className="hover:text-orange-500 transition-colors">Home</button>
           <span>/</span>
-          <span className="hover:text-orange-500 transition-colors">{product.category}</span>
+          <span className="text-text-secondary">{product.category}</span>
           <span>/</span>
           <span className="text-text-primary">{product.name}</span>
         </div>
@@ -111,35 +118,33 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                 </motion.div>
               </AnimatePresence>
 
-              {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-surface/30 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-surface/20 via-transparent to-transparent pointer-events-none" />
 
               {/* Nav arrows */}
               {product.gallery.length > 1 && (
                 <>
                   <button
                     onClick={() => setSelectedImage((prev) => (prev === 0 ? product.gallery.length - 1 : prev - 1))}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass-card-3d card-shine flex items-center justify-center text-text-secondary hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-surface-2/80 backdrop-blur-sm border border-border/30 flex items-center justify-center text-text-secondary hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <ChevronDown size={20} className="rotate-90" />
                   </button>
                   <button
                     onClick={() => setSelectedImage((prev) => (prev === product.gallery.length - 1 ? 0 : prev + 1))}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass-card-3d card-shine flex items-center justify-center text-text-secondary hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-surface-2/80 backdrop-blur-sm border border-border/30 flex items-center justify-center text-text-secondary hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <ChevronDown size={20} className="-rotate-90" />
                   </button>
                 </>
               )}
 
-              {/* Indicador de imagem */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                 {product.gallery.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setSelectedImage(i)}
                     className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                      i === selectedImage ? "bg-orange-500 w-6" : "bg-white/40 hover:bg-white/60"
+                      i === selectedImage ? "bg-orange-500 w-6" : "bg-white/30 hover:bg-white/50"
                     }`}
                   />
                 ))}
@@ -154,8 +159,8 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                   onClick={() => setSelectedImage(i)}
                   className={`shrink-0 w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 ${
                     i === selectedImage
-                      ? "ring-2 ring-orange-500 bg-surface-4 scale-105"
-                      : "bg-surface-3 hover:bg-surface-4 hover:scale-105"
+                      ? "ring-2 ring-orange-500 bg-surface-3 scale-105"
+                      : "bg-surface-2 hover:bg-surface-3 hover:scale-105"
                   }`}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -167,10 +172,9 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
 
           {/* Info Panel */}
           <div className="flex flex-col gap-5 sm:gap-6">
-            {/* Badge + Categoria */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <span className="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-medium glass-glow text-orange-500">
+                <span className="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-medium bg-orange-500/10 text-orange-500 border border-orange-500/20">
                   {product.category}
                 </span>
                 {product.rating >= 4.5 && (
@@ -208,7 +212,6 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
               <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full">-25%</span>
             </div>
 
-            {/* Parcelamento */}
             <p className="text-xs sm:text-sm text-text-tertiary">
               ou <span className="text-text-primary font-medium">12x de R$ {(product.priceNumber / 12).toFixed(2).replace(".", ",")}</span> sem juros
             </p>
@@ -218,33 +221,32 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
               {product.highlights.map((h, i) => (
                 <span
                   key={i}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium bg-surface-3/50 text-text-secondary border border-border/50 hover:border-orange-500/30 hover:text-orange-500 transition-all"
+                  className="px-3 py-1.5 rounded-full text-xs font-medium bg-surface-2/50 text-text-secondary border border-border/30 hover:border-orange-500/30 hover:text-orange-500 transition-all"
                 >
                   {h}
                 </span>
               ))}
             </div>
 
-            {/* Divider */}
-            <div className="border-t border-border/50" />
+            <div className="border-t border-border/30" />
 
             {/* Benefícios */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-surface-3/30 border border-border/30">
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-surface-2/30 border border-border/30">
                 <Package size={16} className="text-orange-500 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-xs font-medium text-text-primary">Entrega Digital</p>
                   <p className="text-[10px] text-text-tertiary">Instantânea</p>
                 </div>
               </div>
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-surface-3/30 border border-border/30">
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-surface-2/30 border border-border/30">
                 <Shield size={16} className="text-green-500 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-xs font-medium text-text-primary">Compra Segura</p>
                   <p className="text-[10px] text-text-tertiary">Dados protegidos</p>
                 </div>
               </div>
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-surface-3/30 border border-border/30">
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-surface-2/30 border border-border/30">
                 <RefreshCw size={16} className="text-orange-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-xs font-medium text-text-primary">Suporte</p>
@@ -253,8 +255,7 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
               </div>
             </div>
 
-            {/* Divider */}
-            <div className="border-t border-border/50" />
+            <div className="border-t border-border/30" />
 
             {/* Descrição curta */}
             <div>
@@ -268,9 +269,9 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
               )}
             </div>
 
-            {/* Quantity + Add to Cart */}
+            {/* Quantity + Add to Cart with Animation */}
             <div className="flex items-center gap-3 sm:gap-4 pt-2">
-              <div className="flex items-center gap-0.5 glass rounded-xl p-0.5">
+              <div className="flex items-center gap-0.5 bg-surface-2/50 border border-border/30 rounded-xl p-0.5">
                 <motion.button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   className="p-2 sm:p-2.5 rounded-lg text-text-secondary hover:text-orange-500 hover:bg-orange-500/10 transition-all touch-target"
@@ -291,13 +292,63 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
               </div>
 
               <motion.button
-                onClick={() => addItem(product, quantity)}
-                className="flex-1 flex items-center justify-center gap-2 py-3 sm:py-3.5 glass-card-3d card-shine text-white font-semibold rounded-xl sm:rounded-2xl text-sm sm:text-base transition-all touch-target"
-                whileHover={{ scale: 1.02, y: -1 }}
+                onClick={handleAddToCart}
+                disabled={justAdded}
+                className={`relative flex-1 flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl text-sm sm:text-base font-semibold transition-all touch-target overflow-hidden ${
+                  justAdded
+                    ? "bg-green-500/15 text-green-400 border-2 border-green-500/30"
+                    : "bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/20"
+                }`}
+                whileHover={justAdded ? {} : { scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <ShoppingBag size={18} />
-                Adicionar ao carrinho
+                {/* Sparkle particles */}
+                {justAdded && (
+                  <>
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <span
+                        key={i}
+                        className="sparkle"
+                        style={{
+                          left: `${20 + Math.random() * 60}%`,
+                          top: `${10 + Math.random() * 80}%`,
+                          backgroundColor: ["#f97316", "#fb923c", "#22c55e", "#eab308", "#a855f7", "#3b82f6", "#ec4899", "#14b8a6"][i],
+                          animationDelay: `${i * 0.06}s`,
+                          width: `${4 + Math.random() * 5}px`,
+                          height: `${4 + Math.random() * 5}px`,
+                        }}
+                      />
+                    ))}
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <span
+                        key={`confetti-${i}`}
+                        className="confetti-piece"
+                        style={{
+                          left: `${25 + Math.random() * 50}%`,
+                          top: `${30 + Math.random() * 30}%`,
+                          backgroundColor: ["#f97316", "#22c55e", "#eab308", "#3b82f6", "#a855f7", "#ec4899"][i],
+                          animationDelay: `${i * 0.08}s`,
+                        }}
+                      />
+                    ))}
+                  </>
+                )}
+                {justAdded ? (
+                  <motion.span
+                    key="check"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="flex items-center gap-2"
+                  >
+                    <Check size={20} className="btn-check" />
+                    Adicionado ao carrinho!
+                  </motion.span>
+                ) : (
+                  <>
+                    <ShoppingBag size={18} />
+                    Adicionar ao carrinho
+                  </>
+                )}
               </motion.button>
             </div>
 
@@ -314,19 +365,19 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
         {/* Tabs Section */}
         <div className="mb-10 sm:mb-14">
           {/* Tab Navigation */}
-          <div className="flex gap-1 overflow-x-auto scrollbar-none border-b border-border/50 mb-6 sm:mb-8">
+          <div className="flex gap-1 overflow-x-auto scrollbar-none border-b border-border/30 mb-6 sm:mb-8">
             {tabs.map((tab) => (
               <motion.button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`relative px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base font-medium whitespace-nowrap glass-card-3d card-shine transition-colors touch-target ${
+                className={`relative px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base font-medium whitespace-nowrap transition-colors touch-target ${
                   activeTab === tab.key ? "text-orange-500" : "text-text-tertiary hover:text-text-secondary"
                 }`}
                 whileTap={{ scale: 0.97 }}
               >
                 {tab.label}
                 {tab.count !== undefined && (
-                  <span className="ml-1.5 text-[10px] sm:text-xs bg-surface-3 px-1.5 py-0.5 rounded-full">{tab.count}</span>
+                  <span className="ml-1.5 text-[10px] sm:text-xs bg-surface-2 px-1.5 py-0.5 rounded-full">{tab.count}</span>
                 )}
                 {activeTab === tab.key && (
                   <motion.div
@@ -349,7 +400,6 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                {/* Descrição */}
                 {activeTab === "descricao" && (
                   <div className="max-w-3xl">
                     <p className="text-sm sm:text-base text-text-secondary leading-relaxed mb-6">
@@ -358,7 +408,7 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                     <h4 className="text-sm sm:text-base font-semibold text-text-primary mb-3 sm:mb-4">📦 O que está incluso:</h4>
                     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                       {product.whatIncluded.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2.5 text-sm text-text-secondary p-3 rounded-xl bg-surface-3/20 border border-border/30">
+                        <li key={i} className="flex items-start gap-2.5 text-sm text-text-secondary p-3 rounded-xl bg-surface-2/20 border border-border/30">
                           <Check size={16} className="text-green-400 mt-0.5 shrink-0" />
                           <span>{item}</span>
                         </li>
@@ -367,12 +417,11 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                   </div>
                 )}
 
-                {/* Detalhes */}
                 {activeTab === "detalhes" && (
                   <div className="max-w-3xl">
                     <div className="grid grid-cols-1 gap-3">
                       {product.details.map((detail, i) => (
-                        <div key={i} className="flex items-start gap-3 p-4 rounded-xl bg-surface-3/20 border border-border/30">
+                        <div key={i} className="flex items-start gap-3 p-4 rounded-xl bg-surface-2/20 border border-border/30">
                           <span className="w-6 h-6 rounded-full bg-orange-500/20 flex items-center justify-center shrink-0 mt-0.5">
                             <span className="text-xs font-bold text-orange-500">{i + 1}</span>
                           </span>
@@ -383,13 +432,12 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                   </div>
                 )}
 
-                {/* Especificações */}
                 {activeTab === "especificacoes" && (
                   <div className="max-w-2xl overflow-hidden rounded-xl sm:rounded-2xl border border-border/50">
                     <table className="w-full text-sm">
                       <tbody>
                         {product.specifications.map((spec, i) => (
-                          <tr key={i} className={i % 2 === 0 ? "bg-surface-4/10" : ""}>
+                          <tr key={i} className={i % 2 === 0 ? "bg-surface-2/20" : ""}>
                             <td className="px-4 sm:px-6 py-3 sm:py-4 text-text-tertiary font-medium w-2/5 border-b border-border/20">
                               {spec.label}
                             </td>
@@ -403,11 +451,9 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                   </div>
                 )}
 
-                {/* Reviews */}
                 {activeTab === "reviews" && (
                   <div className="max-w-3xl">
-                    {/* Summary */}
-                    <div className="flex items-center gap-4 sm:gap-6 p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-surface-3/20 border border-border/30 mb-4 sm:mb-6">
+                    <div className="flex items-center gap-4 sm:gap-6 p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-surface-2/20 border border-border/30 mb-4 sm:mb-6">
                       <div className="text-center">
                         <span className="text-3xl sm:text-4xl font-bold text-orange-500">{displayRating.toFixed(1)}</span>
                         <div className="flex items-center gap-0.5 mt-1 justify-center">
@@ -425,7 +471,7 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                             <div key={star} className="flex items-center gap-2 text-xs">
                               <span className="text-text-tertiary w-3">{star}</span>
                               <Star size={10} className="text-yellow-400 fill-yellow-400" />
-                              <div className="flex-1 h-1.5 rounded-full bg-surface-4/50 overflow-hidden">
+                              <div className="flex-1 h-1.5 rounded-full bg-surface-3/50 overflow-hidden">
                                 <div className="h-full rounded-full bg-orange-500" style={{ width: `${pct}%` }} />
                               </div>
                               <span className="text-text-tertiary w-6 text-right">{count}</span>
@@ -435,20 +481,18 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                       </div>
                     </div>
 
-                    {/* Review form trigger */}
                     {user && (
                       <button
                         onClick={() => setShowReviewForm(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 mb-4 rounded-xl glass-card-3d card-shine text-sm font-medium text-text-secondary hover:text-orange-500 transition-all"
+                        className="flex items-center gap-2 px-4 py-2.5 mb-4 rounded-xl bg-surface-2/30 border border-border/30 text-sm font-medium text-text-secondary hover:text-orange-500 transition-all"
                       >
-                        <MessageSquare size={14} />
+                        <MessageCircle size={14} />
                         Avaliar este produto
                       </button>
                     )}
 
-                    {/* Reviews list */}
                     {reviews.length === 0 ? (
-                      <div className="text-center py-10 rounded-xl bg-surface-3/10 border border-border/20">
+                      <div className="text-center py-10 rounded-xl bg-surface-2/10 border border-border/20">
                         <MessageCircle size={28} className="mx-auto text-text-tertiary mb-3" />
                         <p className="text-sm text-text-tertiary">Nenhuma avaliação ainda.</p>
                         <p className="text-xs text-text-tertiary/60 mt-1">Seja o primeiro a avaliar este produto!</p>
@@ -456,7 +500,7 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                     ) : (
                       <div className="space-y-3 sm:space-y-4">
                         {reviews.map((review) => (
-                          <div key={review.id} className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-surface-3/20 border border-border/30 hover:border-orange-500/20 transition-colors">
+                          <div key={review.id} className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-surface-2/20 border border-border/30 hover:border-orange-500/20 transition-colors">
                             <div className="flex items-start justify-between gap-3 mb-3">
                               <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full bg-orange-500/15 border border-orange-500/20 flex items-center justify-center text-sm font-bold text-orange-500">
@@ -482,7 +526,6 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                       </div>
                     )}
 
-                    {/* Review Form Modal */}
                     {showReviewForm && (
                       <ReviewFormModal
                         productId={product.id}
@@ -490,7 +533,6 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                         onClose={() => setShowReviewForm(false)}
                         onSubmitted={() => {
                           setShowReviewForm(false);
-                          // Force re-render — reviews will update via useMemo
                           setActiveTab("reviews");
                         }}
                       />
@@ -504,7 +546,7 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (
-          <div className="border-t border-border/50 pt-8 sm:pt-10">
+          <div className="border-t border-border/30 pt-8 sm:pt-10">
             <h3 className="text-lg sm:text-xl font-bold text-text-primary mb-4 sm:mb-6">
               Produtos Relacionados
             </h3>
@@ -523,7 +565,7 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                   transition={{ delay: i * 0.05 }}
                   className="group text-left"
                 >
-                  <div className="glass-card-3d card-shine rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300 group-hover:border-orange-500/30 group-hover:shadow-lg group-hover:shadow-orange-500/5">
+                  <div className="card-minimal rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300 group-hover:border-orange-500/30">
                     <div className="aspect-square flex items-center justify-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundColor: rel.color + "15" }}>
                       <span className="text-3xl sm:text-4xl">{rel.image}</span>
                     </div>

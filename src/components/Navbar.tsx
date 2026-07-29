@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, Search, LayoutGrid, HelpCircle, MessageCircle, Info, Star, X, LogOut, LogIn, ArrowRight, Loader2 } from "lucide-react";
+import { ShoppingCart, Search, LayoutGrid, HelpCircle, MessageCircle, Info, X, LogOut, LogIn, ArrowRight } from "lucide-react";
 import { productsData } from "../data/products";
 import type { Product } from "../data/products";
 import { useCart } from "../contexts/CartContext";
@@ -17,56 +17,29 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [logoutConfirm, setLogoutConfirm] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const logoutTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const { totalItems, openCartFullPage } = useCart();
   const { user, openAuthPage, logout } = useAuth();
 
-  // Close user menu on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
-        setLogoutConfirm(false);
-        clearTimeout(logoutTimerRef.current);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Close user menu on Escape
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setUserMenuOpen(false);
-        setLogoutConfirm(false);
-        clearTimeout(logoutTimerRef.current);
-      }
+      if (e.key === "Escape") setUserMenuOpen(false);
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, []);
 
-  // Cleanup logout timer on unmount
-  useEffect(() => {
-    return () => {
-      if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
-    };
-  }, []);
-
-  const handleLogout = () => {
-    setLogoutConfirm(true);
-    logoutTimerRef.current = setTimeout(() => {
-      logout();
-      setUserMenuOpen(false);
-      setLogoutConfirm(false);
-    }, 600);
-  };
-
-  // Reset query when reopening
   useEffect(() => {
     if (searchOpen) {
       setSearchQuery("");
@@ -82,7 +55,6 @@ export default function Navbar() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Search logic — busca por nome, categoria, descrição e highlights
   const results = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -98,7 +70,6 @@ export default function Navbar() {
   const handleSelectProduct = (product: Product) => {
     setSearchOpen(false);
     setSearchQuery("");
-    // Dispatch custom event so App.tsx can open ProductPage
     window.dispatchEvent(new CustomEvent("open-product", { detail: product.id }));
   };
 
@@ -110,7 +81,7 @@ export default function Navbar() {
   return (
     <>
       {/* ========== DESKTOP SIDEBAR ========== */}
-      <aside className="fixed left-0 top-0 bottom-0 z-30 w-72 hidden lg:flex flex-col bg-surface/95 backdrop-blur-xl border-r border-border/40">
+      <aside className="fixed left-0 top-0 bottom-0 z-30 w-72 hidden lg:flex flex-col bg-surface/80 backdrop-blur-xl border-r border-border/30">
         <div className="flex items-center gap-3 px-5 py-5 border-b border-border/20">
           <img src="/logo.png" alt="" className="h-8 w-auto rounded-lg shrink-0" />
           <div className="min-w-0">
@@ -121,74 +92,75 @@ export default function Navbar() {
           </div>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navLinks.map((link) => (
-            <a
-              key={link.name}
-              href={link.href}
-              onClick={(e) => { e.preventDefault(); handleNavClick(link.href); }}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-secondary hover:text-orange-500 glass-card-3d card-shine transition-all duration-200 group"
-            >
-              <span className="w-8 h-8 rounded-lg bg-surface-3/60 group-hover:bg-orange-500/15 flex items-center justify-center shrink-0 transition-all">
-                <link.icon size={15} className="group-hover:text-orange-500 transition-colors" />
-              </span>
-              {link.name}
-            </a>
-          ))}
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            return (
+              <a
+                key={link.name}
+                href={link.href}
+                onClick={(e) => { e.preventDefault(); handleNavClick(link.href); }}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-secondary hover:text-orange-500 hover:bg-orange-500/5 transition-all duration-200 group"
+              >
+                <span className="w-8 h-8 rounded-lg bg-surface-2/50 group-hover:bg-orange-500/10 flex items-center justify-center shrink-0 transition-all">
+                  <Icon size={15} className="group-hover:text-orange-500 transition-colors" />
+                </span>
+                {link.name}
+              </a>
+            );
+          })}
         </nav>
         <div className="px-4 py-4 border-t border-border/20">
           {user ? (
-            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-orange-500/5 to-transparent border border-orange-500/10">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-[10px] font-bold shrink-0 shadow-sm shadow-orange-500/20">
+            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-orange-500/5 border border-orange-500/10">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
                 {user.name.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-xs font-medium text-text-primary truncate">{user.name}</p>
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                </div>
+                <p className="text-xs font-medium text-text-primary truncate">{user.name}</p>
                 <p className="text-[9px] text-text-tertiary truncate">@{user.username}</p>
               </div>
-              <button onClick={handleLogout}                     className="p-1.5 rounded-lg text-text-tertiary hover:text-red-400 glass-card-3d card-shine transition-colors group" title="Sair">
-                <LogOut size={13} className="group-hover:scale-110 transition-transform" />
-              </button>
             </div>
           ) : (
-            <button onClick={openAuthPage} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl glass-card-3d card-shine transition-all group">
+            <button onClick={openAuthPage} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-orange-500/5 transition-all group">
               <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
                 <LogIn size={13} />
               </div>
-              <div className="min-w-0 text-left">
+              <div className="min-w-0 text-left flex-1">
                 <p className="text-xs font-medium text-text-primary truncate group-hover:text-orange-500 transition-colors">Fazer Login</p>
                 <p className="text-[9px] text-text-tertiary truncate">Acesse sua conta</p>
               </div>
-              <ArrowRight size={12} className="text-text-tertiary ml-auto group-hover:text-orange-500 group-hover:translate-x-0.5 transition-all" />
+              <ArrowRight size={12} className="text-text-tertiary group-hover:text-orange-500 group-hover:translate-x-0.5 transition-all" />
             </button>
           )}
         </div>
       </aside>
 
       {/* ========== TOP BAR ========== */}
-      <header className="fixed top-0 left-0 right-0 z-40 lg:left-72 h-14 sm:h-16 lg:h-20 bg-surface/80 backdrop-blur-xl border-b border-border/30 flex items-center">
+      <header className="fixed top-0 left-0 right-0 z-40 lg:left-72 h-14 sm:h-16 lg:h-20 bg-surface/70 backdrop-blur-xl border-b border-border/20 flex items-center">
         <div className="flex items-center justify-between w-full px-3 sm:px-6 lg:px-8">
           <a href="#" className="flex items-center gap-2 lg:hidden">
             <img src="/logo.png" alt="Satoshi Store" className="h-7 w-auto sm:h-8 rounded-lg" />
             <span className="text-base sm:text-lg font-semibold tracking-tight">
               Satoshi <span className="text-orange-500">Store</span>
             </span>
-          </a>            <div className="flex items-center gap-1 sm:gap-2 ml-auto lg:ml-0">
+          </a>
+
+          {/* Spacer on desktop */}
+          <div className="hidden lg:block" />
+
+          <div className="flex items-center gap-1 sm:gap-2 ml-auto lg:ml-0">
             {/* Auth button */}
             {user ? (
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="relative flex items-center gap-1.5 p-1.5 sm:p-2 rounded-xl text-orange-500 glass-card-3d card-shine transition-all duration-200"
+                  className="relative flex items-center gap-1.5 p-1.5 sm:p-2 rounded-xl hover:bg-orange-500/10 transition-all duration-200"
                   aria-label="Perfil"
                 >
                   <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-[9px] sm:text-[10px] font-bold">
                     {user.name.charAt(0).toUpperCase()}
                   </span>
                 </button>
-                {/* Dropdown */}
                 <AnimatePresence>
                   {userMenuOpen && (
                     <motion.div
@@ -196,7 +168,7 @@ export default function Navbar() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -8, scale: 0.95 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-2 w-52 py-2 rounded-xl glass border border-border/30 shadow-2xl overflow-hidden"
+                      className="absolute right-0 mt-2 w-52 py-2 rounded-xl glass border border-border/30 shadow-xl overflow-hidden"
                     >
                       <div className="px-4 py-3 border-b border-border/20">
                         <div className="flex items-center gap-3">
@@ -209,27 +181,14 @@ export default function Navbar() {
                           </div>
                         </div>
                       </div>
-                      <div className="px-2 py-1.5">
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] text-green-400 bg-green-500/5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                          Conta ativa
-                        </div>
-                      </div>
                       <div className="border-t border-border/20 pt-1 px-2 pb-2">
-                        {logoutConfirm ? (
-                          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/5">
-                            <Loader2 size={12} className="animate-spin text-red-400" />
-                            <span className="text-[10px] text-red-400">Saindo...</span>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={handleLogout}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-text-secondary hover:text-red-400 glass-card-3d card-shine transition-colors"
-                          >
-                            <LogOut size={14} />
-                            Sair da conta
-                          </button>
-                        )}
+                        <button
+                          onClick={() => { logout(); setUserMenuOpen(false); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-text-secondary hover:text-red-400 hover:bg-red-500/5 transition-colors"
+                        >
+                          <LogOut size={14} />
+                          Sair da conta
+                        </button>
                       </div>
                     </motion.div>
                   )}
@@ -238,7 +197,7 @@ export default function Navbar() {
             ) : (
               <button
                 onClick={openAuthPage}
-                className="flex items-center gap-1.5 p-2 sm:p-2.5 rounded-xl text-orange-500 bg-orange-500/15 hover:bg-orange-500/25 hover:text-orange-400 transition-all duration-200 shadow-sm shadow-orange-500/10"
+                className="flex items-center gap-1.5 p-2 sm:p-2.5 rounded-xl text-orange-500 bg-orange-500/10 hover:bg-orange-500/20 hover:text-orange-400 transition-all duration-200"
                 aria-label="Entrar"
               >
                 <LogIn size={16} className="sm:size-[18px]" />
@@ -246,15 +205,17 @@ export default function Navbar() {
             )}
             <button
               onClick={() => setSearchOpen(true)}
-              className="p-2 sm:p-2.5 rounded-xl text-orange-500 glass-card-3d card-shine transition-all duration-200"
+              className="p-2 sm:p-2.5 rounded-xl text-text-secondary hover:text-orange-500 hover:bg-orange-500/5 transition-all duration-200"
               aria-label="Buscar"
             >
               <Search size={16} className="sm:size-[18px]" />
             </button>
-            <button onClick={openCartFullPage} className="relative p-2 sm:p-2.5 rounded-xl text-orange-500 glass-card-3d card-shine transition-all duration-200" aria-label="Carrinho">
+            <button onClick={openCartFullPage} className="relative p-2 sm:p-2.5 rounded-xl text-text-secondary hover:text-orange-500 hover:bg-orange-500/5 transition-all duration-200" aria-label="Carrinho">
               <ShoppingCart size={16} className="sm:size-[18px]" />
               {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-[18px] sm:h-[18px] bg-orange-500 rounded-full text-[8px] sm:text-[9px] font-bold flex items-center justify-center text-white shadow-sm shadow-orange-500/30">{totalItems > 9 ? '9+' : totalItems}</span>
+                <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-[18px] sm:h-[18px] bg-orange-500 rounded-full text-[8px] sm:text-[9px] font-bold flex items-center justify-center text-white shadow-sm shadow-orange-500/30">
+                  {totalItems > 9 ? '9+' : totalItems}
+                </span>
               )}
             </button>
           </div>
@@ -265,25 +226,25 @@ export default function Navbar() {
       <div className="fixed bottom-0 left-0 right-0 z-30 lg:hidden">
         <div style={{ paddingBottom: "env(safe-area-inset-bottom, 8px)" }}>
           <div className="flex justify-center px-4">
-            <div className="bg-surface/90 backdrop-blur-xl rounded-2xl px-2 py-1.5 shadow-[0_-4px_30px_rgba(0,0,0,0.3)] border border-border/30 flex items-center gap-1">
+            <div className="bg-surface/80 backdrop-blur-xl rounded-2xl px-2 py-1.5 shadow-[0_-4px_30px_rgba(0,0,0,0.3)] border border-border/20 flex items-center gap-1">
               {navLinks.map((link) => {
                 const Icon = link.icon;
                 return (
                   <a key={link.name} href={link.href} onClick={(e) => { e.preventDefault(); handleNavClick(link.href); }}
-                    className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-text-tertiary hover:text-orange-500 glass-card-3d card-shine transition-colors min-w-[52px] relative group"
+                    className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-text-tertiary hover:text-orange-500 transition-colors min-w-[52px] relative group"
                   >
-                    <span className="w-8 h-8 rounded-lg flex items-center justify-center group-hover:bg-orange-500/15 transition-all">
+                    <span className="w-8 h-8 rounded-lg flex items-center justify-center group-hover:bg-orange-500/10 transition-all">
                       <Icon size={18} className="group-hover:text-orange-500 transition-colors" />
                     </span>
-                    <span className="text-[9px] font-medium leading-none group-hover:text-orange-500 transition-colors">{link.name}</span>
+                    <span className="text-[9px] font-medium leading-none">{link.name}</span>
                   </a>
                 );
               })}
               {/* Cart button on mobile */}
               <button onClick={openCartFullPage}
-                className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-orange-500 hover:text-orange-500 glass-card-3d card-shine transition-colors min-w-[52px] relative group"
+                className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-orange-500 min-w-[52px] relative group"
               >
-                <span className="w-8 h-8 rounded-lg flex items-center justify-center group-hover:bg-orange-500/15 transition-all relative">
+                <span className="w-8 h-8 rounded-lg flex items-center justify-center group-hover:bg-orange-500/10 transition-all relative">
                   <ShoppingCart size={18} className="group-hover:text-orange-500 transition-colors" />
                   {totalItems > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-orange-500 rounded-full text-[7px] font-bold flex items-center justify-center text-white shadow-sm shadow-orange-500/30">
@@ -313,7 +274,6 @@ export default function Navbar() {
               className="max-w-xl mx-auto mt-16 sm:mt-20 px-3 sm:px-4"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Search Input */}
               <motion.div
                 initial={{ y: -20, opacity: 0, scale: 0.97 }}
                 animate={{ y: 0, opacity: 1, scale: 1 }}
@@ -333,23 +293,22 @@ export default function Navbar() {
                     autoFocus
                   />
                   {searchQuery && (
-                    <button onClick={() => setSearchQuery("")} className="p-1 rounded-lg glass-card-3d card-shine text-text-tertiary hover:text-text-primary transition-colors">
+                    <button onClick={() => setSearchQuery("")} className="p-1 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-surface-3/50 transition-colors">
                       <X size={14} />
                     </button>
                   )}
                   <button onClick={() => { setSearchOpen(false); setSearchQuery(""); }}
-                    className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl glass-card-3d card-shine text-xs sm:text-sm text-text-secondary transition-colors shrink-0"
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-surface-2/50 text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-all shrink-0"
                   >
                     ESC
                   </button>
                 </div>
 
-                {/* Results */}
                 {searchQuery.trim() && (
                   <div className="border-t border-border/20 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto">
                     {results.length === 0 ? (
                       <div className="flex flex-col items-center gap-2 py-10 px-4">
-                        <Search size={32} className="text-text-tertiary/50" />
+                        <Search size={32} className="text-text-tertiary/30" />
                         <p className="text-sm text-text-tertiary">Nenhum produto encontrado para "<span className="text-text-secondary">{searchQuery}</span>"</p>
                       </div>
                     ) : (
@@ -364,7 +323,7 @@ export default function Navbar() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.03 }}
                             onClick={() => handleSelectProduct(product)}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl glass-card-3d card-shine transition-colors text-left group"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-2/50 transition-colors text-left group"
                           >
                             <div
                               className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
@@ -378,13 +337,7 @@ export default function Navbar() {
                               </p>
                               <div className="flex items-center gap-2 mt-0.5">
                                 <span className="text-xs font-semibold text-orange-500">{product.price}</span>
-                                <span className="text-[10px] text-text-tertiary bg-surface-3 px-1.5 py-0.5 rounded-full">{product.category}</span>
-                              </div>
-                              <div className="flex items-center gap-1 mt-0.5">
-                                {Array.from({ length: 5 }).map((_, s) => (
-                                  <Star key={s} size={7} className={s < product.rating ? "text-yellow-500 fill-yellow-500" : "text-surface-4"} />
-                                ))}
-                                <span className="text-[9px] text-text-tertiary ml-0.5">({product.reviewCount})</span>
+                                <span className="text-[10px] text-text-tertiary bg-surface-2 px-1.5 py-0.5 rounded-full">{product.category}</span>
                               </div>
                             </div>
                           </motion.button>
@@ -399,10 +352,9 @@ export default function Navbar() {
                   </div>
                 )}
 
-                {/* Empty state */}
                 {!searchQuery.trim() && (
                   <div className="flex flex-col items-center gap-3 py-8 px-4">
-                    <Search size={28} className="text-text-tertiary/30" />
+                    <Search size={28} className="text-text-tertiary/20" />
                     <p className="text-xs text-text-tertiary text-center max-w-xs">
                       Digite o nome de um produto, categoria ou característica para começar a buscar
                     </p>
@@ -411,7 +363,7 @@ export default function Navbar() {
                         <button
                           key={suggestion}
                           onClick={() => setSearchQuery(suggestion)}
-                          className="px-3 py-1 rounded-full glass-card-3d card-shine text-[10px] text-text-tertiary hover:text-text-secondary transition-colors"
+                          className="px-3 py-1 rounded-full bg-surface-2/50 text-[10px] text-text-tertiary hover:text-text-secondary hover:bg-surface-2 transition-colors"
                         >
                           {suggestion}
                         </button>

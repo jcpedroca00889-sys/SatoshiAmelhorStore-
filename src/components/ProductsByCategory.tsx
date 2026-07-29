@@ -1,6 +1,6 @@
-import { memo, useRef, useState, useCallback, useEffect, useMemo } from "react";
+import { memo, useState, useCallback, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, ChevronLeft, ChevronRight, ShoppingBag, Star, Shield, Clock, ArrowUpDown, ArrowUp, ArrowDown, Check } from "lucide-react";
+import { Sparkles, ChevronLeft, ChevronRight, ShoppingBag, Star, ArrowUpDown, ArrowUp, ArrowDown, Check } from "lucide-react";
 import { productsData } from "../data/products";
 import { useDragScroll } from "../hooks/useDragScroll";
 import { useCart } from "../contexts/CartContext";
@@ -13,160 +13,123 @@ interface ProductCardHorizProps {
 }
 
 function ProductCardHorizComponent({ product, index, onProductId, onSelectProduct }: ProductCardHorizProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const tiltRef = useRef<HTMLDivElement>(null);
   const { addItem } = useCart();
-  const [isHovered, setIsHovered] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    const rect = cardRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
-    const rotateX = (y - 0.5) * -12;
-    const rotateY = (x - 0.5) * 12;
-
-    const tilt = tiltRef.current;
-    if (tilt) {
-      tilt.style.transform =
-        `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(10px)`;
-      tilt.style.setProperty("--mouse-x", `${x * 100}%`);
-      tilt.style.setProperty("--mouse-y", `${y * 100}%`);
-    }
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    setIsHovered(false);
-    const tilt = tiltRef.current;
-    if (tilt) {
-      tilt.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0)";
-      tilt.style.setProperty("--mouse-x", "50%");
-      tilt.style.setProperty("--mouse-y", "50%");
-    }
-  }, []);
+  const handleAddToCart = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    addItem(product);
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 1200);
+  }, [addItem, product]);
 
   return (
-    <div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={handleMouseLeave}
-      className="perspective-1000 shrink-0"
+    <motion.div
+      initial={{ opacity: 0, x: 30 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.4, delay: index * 0.04, ease: [0.16, 1, 0.3, 1] }}
+      onClick={() => onSelectProduct?.(onProductId || product.id)}
+      className="group relative cursor-pointer shrink-0"
     >
       <motion.div
-        initial={{ opacity: 0, x: 30 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.4, delay: index * 0.04, ease: [0.16, 1, 0.3, 1] }}
-        onClick={() => onSelectProduct?.(onProductId || product.id)}
-        className="group relative cursor-pointer"
+        className="card-minimal rounded-2xl overflow-hidden w-[200px] sm:w-[240px] card-shine"
+        whileHover={{
+          boxShadow: "0 20px 60px rgba(249,115,22,0.1)",
+          borderColor: "rgba(249,115,22,0.3)",
+          y: -2,
+        }}
+        transition={{ type: "tween", duration: 0.3 }}
       >
-        <motion.div
-          ref={tiltRef}
-          className={`rounded-2xl overflow-hidden w-[200px] sm:w-[240px] card-shine transition-shadow duration-300 ${
-            isHovered ? "glass-card-3d glass-border-glow" : "glass-card-3d"
-          }`}
-          style={{
-            transform: "perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0)",
-            transition: "transform 0.15s ease-out, box-shadow 0.3s ease",
-          }}
-          whileHover={{
-            boxShadow: "0 25px 70px rgba(249,115,22,0.18)",
-            y: -2,
-          }}
-        >
+        <div className="relative aspect-square overflow-hidden bg-surface-3">
           <div
-            className="absolute inset-0 pointer-events-none z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-            style={{
-              background:
-                `radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), ${product.color}35 0%, transparent 60%)`,
-            }}
-          />
+            className="absolute inset-0 flex items-center justify-center group-hover:scale-110 transition-transform duration-700 ease-out"
+            style={{ backgroundColor: product.color + "15" }}
+          >
+            <span className="text-3xl sm:text-4xl select-none">{product.image}</span>
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-surface/80 via-surface/10 to-transparent" />
 
-          <div className="relative aspect-square overflow-hidden bg-surface-3">
-            <div
-              className="absolute inset-0 flex items-center justify-center group-hover:scale-110 transition-transform duration-700 ease-out"
-              style={{ backgroundColor: product.color + "15" }}
-            >
-              <span className="text-3xl sm:text-4xl select-none">{product.image}</span>
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-surface/80 via-surface/10 to-transparent" />
-
-            <div className="absolute top-2 left-2 z-20">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface/80 backdrop-blur-sm text-[8px] text-text-secondary border border-border/30">
-                {product.category}
-              </span>
-            </div>
-
-            <div className="absolute bottom-2 left-2 z-20 preserve-3d">
-              <motion.span
-                className="inline-block text-sm sm:text-base font-bold text-orange-500 drop-shadow-lg card-3d-depth"
-                whileHover={{ scale: 1.1, translateZ: 20 }}
-                transition={{ type: "spring", stiffness: 300, damping: 15 }}
-              >
-                {product.price}
-              </motion.span>
-            </div>
-
-            <div className="absolute top-2 right-2 z-20 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-green-500/15 border border-green-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-[7px] text-green-400 font-medium">Disponível</span>
-            </div>
+          <div className="absolute top-2 left-2 z-20">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface/80 backdrop-blur-sm text-[8px] text-text-secondary border border-border/30">
+              {product.category}
+            </span>
           </div>
 
-          <div className="p-2.5 sm:p-3 space-y-1.5">
-            <h3 className="text-[11px] sm:text-xs font-semibold text-text-primary leading-tight line-clamp-2 group-hover:gradient-text transition-all duration-300">
-              {product.name}
-            </h3>
+          <div className="absolute bottom-2 left-2 z-20">
+            <span className="inline-block text-sm sm:text-base font-bold text-orange-500 drop-shadow-lg">
+              {product.price}
+            </span>
+          </div>
+        </div>
 
-            <div className="flex items-center gap-1">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, scale: 0 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.04 + i * 0.03 }}
-                >
-                  <Star
-                    size={8}
+        <div className="p-2.5 sm:p-3 space-y-1.5">
+          <h3 className="text-[11px] sm:text-xs font-semibold text-text-primary leading-tight line-clamp-2 group-hover:text-orange-500 transition-colors duration-300">
+            {product.name}
+          </h3>
+
+          <div className="flex items-center gap-1">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star
+                key={i}
+                size={8}
+                style={{
+                  color: i < product.rating ? "#eab308" : "#334155",
+                  fill: i < product.rating ? "#eab308" : "transparent",
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Add to Cart Button with Animation */}
+          <motion.button
+            onClick={handleAddToCart}
+            className={`relative w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[10px] font-medium transition-all overflow-hidden ${
+              justAdded
+                ? "bg-green-500/15 text-green-400 border border-green-500/30"
+                : "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 border border-orange-500/20"
+            }`}
+            whileHover={justAdded ? {} : { scale: 1.04, y: -1 }}
+            whileTap={{ scale: 0.95 }}
+            disabled={justAdded}
+          >
+            {justAdded && (
+              <>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <span
+                    key={i}
+                    className="sparkle"
                     style={{
-                      color: i < product.rating ? "#eab308" : "#334155",
-                      fill: i < product.rating ? "#eab308" : "transparent",
+                      left: `${20 + Math.random() * 60}%`,
+                      top: `${10 + Math.random() * 80}%`,
+                      backgroundColor: ["#f97316", "#22c55e", "#eab308", "#a855f7"][i],
+                      animationDelay: `${i * 0.08}s`,
+                      width: `${3 + Math.random() * 3}px`,
+                      height: `${3 + Math.random() * 3}px`,
                     }}
                   />
-                </motion.div>
-              ))}
-              <span className="text-[9px] text-text-tertiary">({product.rating}.0)</span>
-            </div>
-
-<div className="flex items-center gap-1.5">
+                ))}
+              </>
+            )}
+            {justAdded ? (
               <motion.span
-                className="flex items-center gap-0.5 text-[8px] text-green-400/80"
-                whileHover={{ scale: 1.05 }}
+                key="check"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="flex items-center gap-1"
               >
-                <Shield size={8} /> Seguro
+                <Check size={11} className="btn-check" />
+                Adicionado!
               </motion.span>
-              <motion.span
-                className="flex items-center gap-0.5 text-[8px] text-orange-400/80"
-                whileHover={{ scale: 1.05 }}
-              >
-                <Clock size={8} /> Instantâneo
-              </motion.span>
-            </div>
-
-            <motion.button
-              className="w-full flex items-center justify-center gap-1 py-1.5 rounded-xl glass-glow text-[10px] font-medium text-text-secondary hover:text-orange-500 hover:border-orange-500/40 transition-colors"
-              whileHover={{ scale: 1.04, y: -1, boxShadow: "0 8px 25px rgba(249,115,22,0.2)" }}
-              whileTap={{ scale: 0.95 }}
-              onClick={(e) => { e.stopPropagation(); addItem(product); }}
-            >
-              <ShoppingBag size={11} /> Adicionar
-            </motion.button>
-          </div>
-        </motion.div>
+            ) : (
+              <>
+                <ShoppingBag size={11} /> Adicionar
+              </>
+            )}
+          </motion.button>
+        </div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }
 const ProductCardHoriz = memo(ProductCardHorizComponent);
@@ -178,65 +141,34 @@ interface ProductCardGridProps {
 }
 
 function ProductCardGridComponent({ product, index, onSelectProduct }: ProductCardGridProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const tiltRef = useRef<HTMLDivElement>(null);
   const { addItem } = useCart();
-  const [isHovered, setIsHovered] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    const rect = cardRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
-    const tilt = tiltRef.current;
-    if (tilt) {
-      tilt.style.transform =
-        `perspective(1000px) rotateX(${(y - 0.5) * -12}deg) rotateY(${(x - 0.5) * 12}deg) translateZ(8px)`;
-      tilt.style.setProperty("--mouse-x", `${x * 100}%`);
-      tilt.style.setProperty("--mouse-y", `${y * 100}%`);
-    }
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    setIsHovered(false);
-    const tilt = tiltRef.current;
-    if (tilt) {
-      tilt.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0)";
-      tilt.style.setProperty("--mouse-x", "50%");
-      tilt.style.setProperty("--mouse-y", "50%");
-    }
-  }, []);
+  const handleAddToCart = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    addItem(product);
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 1200);
+  }, [addItem, product]);
 
   return (
     <motion.div
-      ref={cardRef}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.4, delay: index * 0.03 }}
       onClick={() => onSelectProduct(product.id)}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={handleMouseLeave}
       className="perspective-1000 group cursor-pointer"
     >
-      <div
-        ref={tiltRef}
-        className={`rounded-2xl overflow-hidden card-shine transition-shadow duration-300 ${
-          isHovered ? "glass-card-3d glass-border-glow" : "glass-card-3d"
-        }`}
-        style={{
-          transform: "perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0)",
-          transition: "transform 0.15s ease-out, box-shadow 0.3s ease",
+      <motion.div
+        className="card-minimal rounded-2xl overflow-hidden card-shine"
+        whileHover={{
+          boxShadow: "0 20px 60px rgba(249,115,22,0.1)",
+          borderColor: "rgba(249,115,22,0.3)",
+          y: -2,
         }}
+        transition={{ type: "tween", duration: 0.3 }}
       >
-        <div
-          className="absolute inset-0 pointer-events-none z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-          style={{
-            background:
-              `radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), ${product.color}35 0%, transparent 60%)`,
-          }}
-        />
         <div
           className="relative aspect-square overflow-hidden bg-surface-3 flex items-center justify-center group-hover:scale-105 transition-transform duration-700"
           style={{ backgroundColor: product.color + "15" }}
@@ -250,66 +182,91 @@ function ProductCardGridComponent({ product, index, onSelectProduct }: ProductCa
             </span>
           </div>
 
-          <div className="absolute top-2 right-2 z-20 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-green-500/15 border border-green-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-[7px] text-green-400 font-medium">Disponível</span>
-          </div>
-
-          <div className="absolute bottom-2 left-2 z-20 preserve-3d">
-            <motion.span
-              className="inline-block text-sm sm:text-base font-bold text-orange-500 drop-shadow-lg card-3d-depth"
-              whileHover={{ scale: 1.1, translateZ: 20 }}
-              transition={{ type: "spring", stiffness: 300, damping: 15 }}
-            >
+          <div className="absolute bottom-2 left-2 z-20">
+            <span className="text-sm sm:text-base font-bold text-orange-500 drop-shadow-lg">
               {product.price}
-            </motion.span>
+            </span>
           </div>
         </div>
         <div className="p-3 sm:p-4 space-y-2">
-          <h3 className="text-xs sm:text-sm font-semibold text-text-primary leading-tight line-clamp-2 group-hover:gradient-text transition-all duration-300">
+          <h3 className="text-xs sm:text-sm font-semibold text-text-primary leading-tight line-clamp-2 group-hover:text-orange-500 transition-colors duration-300">
             {product.name}
           </h3>
 
           <div className="flex items-center gap-1">
             {Array.from({ length: 5 }).map((_, i) => (
-              <motion.div
+              <Star
                 key={i}
-                initial={{ opacity: 0, scale: 0 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.03 + i * 0.03 }}
-              >
-                <Star
-                  size={10}
-                  style={{
-                    color: i < product.rating ? "#eab308" : "#334155",
-                    fill: i < product.rating ? "#eab308" : "transparent",
-                  }}
-                />
-              </motion.div>
+                size={10}
+                style={{
+                  color: i < product.rating ? "#eab308" : "#334155",
+                  fill: i < product.rating ? "#eab308" : "transparent",
+                }}
+              />
             ))}
             <span className="text-[10px] text-text-tertiary ml-1">({product.reviewCount})</span>
           </div>
 
-          <div className="flex items-center gap-2 text-[10px] text-text-tertiary">
-            <motion.span className="flex items-center gap-0.5" whileHover={{ scale: 1.05 }}>
-              <Shield size={9} className="text-green-400" /> Seguro
-            </motion.span>
-            <motion.span className="flex items-center gap-0.5" whileHover={{ scale: 1.05 }}>
-              <Clock size={9} className="text-orange-400" /> Instantâneo
-            </motion.span>
-          </div>
-
+          {/* Add to Cart Button with Animation */}
           <motion.button
-            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl glass-glow text-xs font-medium text-text-secondary hover:text-orange-500 hover:border-orange-500/40 transition-colors"
-            whileHover={{ scale: 1.03, y: -1, boxShadow: "0 8px 25px rgba(249,115,22,0.2)" }}
+            onClick={handleAddToCart}
+            className={`relative w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium transition-all overflow-hidden ${
+              justAdded
+                ? "bg-green-500/15 text-green-400 border border-green-500/30"
+                : "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 border border-orange-500/20"
+            }`}
+            whileHover={justAdded ? {} : { scale: 1.03, y: -1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={(e) => { e.stopPropagation(); addItem(product); }}
+            disabled={justAdded}
           >
-            <ShoppingBag size={13} /> Adicionar
+            {justAdded && (
+              <>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <span
+                    key={i}
+                    className="sparkle"
+                    style={{
+                      left: `${20 + Math.random() * 60}%`,
+                      top: `${10 + Math.random() * 80}%`,
+                      backgroundColor: ["#f97316", "#fb923c", "#22c55e", "#eab308", "#a855f7", "#3b82f6"][i],
+                      animationDelay: `${i * 0.08}s`,
+                      width: `${4 + Math.random() * 4}px`,
+                      height: `${4 + Math.random() * 4}px`,
+                    }}
+                  />
+                ))}
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <span
+                    key={`confetti-${i}`}
+                    className="confetti-piece"
+                    style={{
+                      left: `${30 + Math.random() * 40}%`,
+                      top: `${40 + Math.random() * 20}%`,
+                      backgroundColor: ["#f97316", "#22c55e", "#eab308", "#3b82f6"][i],
+                      animationDelay: `${i * 0.1}s`,
+                    }}
+                  />
+                ))}
+              </>
+            )}
+            {justAdded ? (
+              <motion.span
+                key="check"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="flex items-center gap-1.5"
+              >
+                <Check size={13} className="btn-check" />
+                Adicionado!
+              </motion.span>
+            ) : (
+              <>
+                <ShoppingBag size={13} /> Adicionar
+              </>
+            )}
           </motion.button>
         </div>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
@@ -333,7 +290,9 @@ function CategoryRow({
 
   const scroll = useCallback((dir: "left" | "right") => {
     scrollRef.current?.scrollBy({ left: dir === "left" ? -400 : 400, behavior: "smooth" });
-  }, []);  useEffect(() => {
+  }, []);
+
+  useEffect(() => {
     const el = scrollRef.current; if (!el) return;
     checkScroll();
     el.addEventListener("scroll", checkScroll, { passive: true });
@@ -351,14 +310,14 @@ function CategoryRow({
         <div className="flex items-center gap-2.5">
           <span className="text-xl">{categoryIcons[categoryName] || "📦"}</span>
           <h3 className="text-base sm:text-lg font-semibold text-text-primary">{categoryName}</h3>
-          <span className="text-xs text-text-tertiary bg-surface-3 px-2 py-0.5 rounded-full">{products.length} itens</span>
+          <span className="text-xs text-text-tertiary bg-surface-2 px-2 py-0.5 rounded-full">{products.length} itens</span>
         </div>
       </div>
       <div className="relative group/row">
         {canScrollLeft && (
           <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             onClick={() => scroll("left")}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full glass-glow flex items-center justify-center text-text-secondary hover:text-orange-500 shadow-lg"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-surface-2/80 backdrop-blur-sm border border-border/30 flex items-center justify-center text-text-secondary hover:text-orange-500 shadow-lg"
             whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
           ><ChevronLeft size={16} /></motion.button>
         )}
@@ -367,20 +326,18 @@ function CategoryRow({
           style={{ scrollBehavior: "smooth" }}
         >
           {products.map((product, i) => (
-            <div key={product.id} data-drag-card style={{ display: "contents" }}>
-              <ProductCardHoriz product={product} index={i} onProductId={product.id} onSelectProduct={onSelectProduct} />
-            </div>
+            <ProductCardHoriz key={product.id} product={product} index={i} onProductId={product.id} onSelectProduct={onSelectProduct} />
           ))}
         </div>
         {canScrollRight && (
           <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             onClick={() => scroll("right")}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full glass-glow flex items-center justify-center text-text-secondary hover:text-orange-500 shadow-lg"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-surface-2/80 backdrop-blur-sm border border-border/30 flex items-center justify-center text-text-secondary hover:text-orange-500 shadow-lg"
             whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
           ><ChevronRight size={16} /></motion.button>
         )}
-        <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-surface to-transparent pointer-events-none z-[1] opacity-60" />
-        <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-surface to-transparent pointer-events-none z-[1] opacity-60" />
+        <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-surface to-transparent pointer-events-none z-[1] opacity-40" />
+        <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-surface to-transparent pointer-events-none z-[1] opacity-40" />
       </div>
     </motion.div>
   );
@@ -453,10 +410,11 @@ function CategoryFilterBar({ selectedCategory, onCategoryChange }: CategoryFilte
     scrollRef.current?.scrollBy({ left: dir === "left" ? -300 : 300, behavior: "smooth" });
   }, []);
 
-  return (        <div className="relative mb-4">
+  return (
+    <div className="relative mb-4">
       {canScrollLeft && (
         <button onClick={() => scroll("left")}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full glass-glow flex items-center justify-center text-text-secondary hover:text-orange-500 shadow-lg hover:scale-110 transition-transform"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-surface-2/80 backdrop-blur-sm border border-border/30 flex items-center justify-center text-text-secondary hover:text-orange-500 shadow-lg"
         ><ChevronLeft size={18} /></button>
       )}
       <div ref={scrollRef} {...filterDragHandlers}
@@ -467,15 +425,15 @@ function CategoryFilterBar({ selectedCategory, onCategoryChange }: CategoryFilte
           const isSelected = selectedCategory === cat.id;
           return (
             <button key={cat.id} onClick={() => onCategoryChange(isSelected ? null : cat.id, cat.name)}
-              className={`relative flex items-center gap-2.5 px-4 py-2.5 rounded-2xl whitespace-nowrap shrink-0 transition-all duration-300 ${
+              className={`relative flex items-center gap-2.5 px-4 py-2.5 rounded-2xl whitespace-nowrap shrink-0 transition-all duration-300 border ${
                 isSelected
-                  ? "glass-glow text-orange-500 border-orange-500/40"
-                  : "glass-premium text-text-secondary hover:text-orange-500 hover:border-orange-500/20 hover:scale-105 hover:-translate-y-0.5"
+                  ? "bg-orange-500/10 border-orange-500/30 text-orange-500"
+                  : "bg-surface-2/30 border-border/30 text-text-secondary hover:text-orange-500 hover:border-orange-500/20"
               }`}
             >
               <span className="text-lg">{cat.icon}</span>
               <span className="text-sm font-medium">{cat.name}</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isSelected ? "bg-orange-500/20 text-orange-400" : "bg-surface-3 text-text-tertiary"}`}>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isSelected ? "bg-orange-500/20 text-orange-400" : "bg-surface-2 text-text-tertiary"}`}>
                 {cat.item_count}
               </span>
             </button>
@@ -484,7 +442,7 @@ function CategoryFilterBar({ selectedCategory, onCategoryChange }: CategoryFilte
       </div>
       {canScrollRight && (
         <button onClick={() => scroll("right")}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full glass-glow flex items-center justify-center text-text-secondary hover:text-orange-500 shadow-lg hover:scale-110 transition-transform"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-surface-2/80 backdrop-blur-sm border border-border/30 flex items-center justify-center text-text-secondary hover:text-orange-500 shadow-lg"
         ><ChevronRight size={18} /></button>
       )}
       <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-surface to-transparent pointer-events-none z-[1]" />
@@ -504,8 +462,8 @@ function FilteredCategoryView({
 
   const sortedProducts = useMemo(() => sortProducts(products, sort), [products, sort]);
 
-  return (        <div className="mt-3">
-      {/* Category header */}
+  return (
+    <div className="mt-3">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-3">
         <div className="flex items-center gap-3 mb-2">
           <span className="text-2xl">{categoryIcons[categoryName] || "📦"}</span>
@@ -516,11 +474,10 @@ function FilteredCategoryView({
         </div>
       </motion.div>
 
-      {/* Sort bar */}
       <div className="flex items-center justify-between mb-3 gap-3">
         <div className="relative">
           <button onClick={() => setShowSortMenu(!showSortMenu)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl glass-premium text-xs sm:text-sm text-text-secondary hover:text-orange-500 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-2/30 border border-border/30 text-xs sm:text-sm text-text-secondary hover:text-orange-500 transition-colors"
           >
             <ArrowUpDown size={14} />
             {sortOptions.find((o) => o.value === sort)?.label || "Ordenar"}
@@ -536,7 +493,7 @@ function FilteredCategoryView({
                     className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-xs transition-colors ${
                       sort === option.value
                         ? "text-orange-500 bg-orange-500/10"
-                        : "text-text-secondary hover:text-text-primary hover:bg-surface-3/50"
+                        : "text-text-secondary hover:text-text-primary hover:bg-surface-2/50"
                     }`}
                   >
                     <option.icon size={14} />
@@ -554,14 +511,12 @@ function FilteredCategoryView({
         </span>
       </div>
 
-      {/* Product grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
         {sortedProducts.map((product, i) => (
           <ProductCardGrid key={product.id} product={product} index={i} onSelectProduct={onSelectProduct} />
         ))}
       </div>
 
-      {/* Empty state */}
       {sortedProducts.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-8">
           <span className="text-4xl">📦</span>
@@ -606,11 +561,6 @@ export default function ProductsByCategory({ onProductSelect }: ProductsByCatego
 
   return (
     <section id="todos-produtos" className="relative py-8 sm:py-12 scroll-mt-20">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full bg-orange-500/5 blur-[150px]" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full bg-orange-400/5 blur-[150px]" />
-      </div>
-
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
@@ -633,7 +583,6 @@ export default function ProductsByCategory({ onProductSelect }: ProductsByCatego
 
         <CategoryFilterBar selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
 
-        {/* Filtered view or All categories */}
         {filteredProducts ? (
           <FilteredCategoryView
             categoryName={selectedCategoryName}

@@ -1649,7 +1649,6 @@ export const productsData: Product[] = [
     reviewCount: 1234,
     image: "📺",
     color: "#E50914",
-    type: "digital",
     description: "Assinatura Netflix Premium Ultra com 4K HDR, 4 telas simultâneas e acesso a todo catálogo por 12 meses. Entrega automática da conta.",
     details: [
       "Qualidade 4K HDR com Dolby Vision e Atmos",
@@ -1680,7 +1679,6 @@ export const productsData: Product[] = [
     reviewCount: 2341,
     image: "🎵",
     color: "#1DB954",
-    type: "digital",
     description: "Spotify Family com 6 contas individuais, música sem anúncios, downloads ilimitados e áudio de alta qualidade.",
     details: [
       "6 contas individuais para toda família",
@@ -1711,7 +1709,6 @@ export const productsData: Product[] = [
     reviewCount: 1876,
     image: "✨",
     color: "#113CCF",
-    type: "digital",
     description: "Disney+ Premium com 4K HDR, Star+ incluso e catálogo completo da Disney, Pixar, Marvel, Star Wars e National Geographic.",
     details: [
       "Catálogo completo Disney, Pixar, Marvel, Star Wars e NatGeo",
@@ -1742,7 +1739,6 @@ export const productsData: Product[] = [
     reviewCount: 987,
     image: "🎬",
     color: "#5822B4",
-    type: "digital",
     description: "HBO Max Ultra com 4K HDR, 5 perfis e catálogo completo HBO, Warner Bros, DC e muito mais por 12 meses.",
     details: [
       "Catálogo HBO, Warner Bros, DC, Studio Ghibli e mais",
@@ -1773,7 +1769,6 @@ export const productsData: Product[] = [
     reviewCount: 3456,
     image: "💻",
     color: "#06D6A0",
-    type: "digital",
     description: "Curso completo de desenvolvimento FullStack com React, Node.js, TypeScript, bancos de dados e deploy. Acesso vitalício com suporte.",
     details: [
       "Módulos: Frontend, Backend, Banco de Dados, DevOps",
@@ -1804,7 +1799,6 @@ export const productsData: Product[] = [
     reviewCount: 2789,
     image: "🌎",
     color: "#FF6B6B",
-    type: "digital",
     description: "Método comprovado para aprender inglês em 6 meses com aulas diárias, prática de conversação e material exclusivo.",
     details: [
       "Método passo a passo do zero à fluência",
@@ -1835,7 +1829,6 @@ export const productsData: Product[] = [
     reviewCount: 5678,
     image: "🪟",
     color: "#0078D4",
-    type: "digital",
     description: "Licença digital vitalícia do Windows 11 Pro para 1 PC. Ativação garantida com suporte técnico incluso.",
     details: [
       "Licença digital vitalícia para 1 dispositivo",
@@ -1866,7 +1859,6 @@ export const productsData: Product[] = [
     reviewCount: 3456,
     image: "📊",
     color: "#D83B01",
-    type: "digital",
     description: "Microsoft 365 Pro com Word, Excel, PowerPoint, Outlook, Teams e 1TB OneDrive. Para 5 dispositivos por 12 meses.",
     details: [
       "Word, Excel, PowerPoint, Outlook, Teams, OneNote",
@@ -1898,7 +1890,6 @@ export const productsData: Product[] = [
     reviewCount: 4567,
     image: "🎮",
     color: "#003791",
-    type: "digital",
     description: "Gift Card PlayStation Network de R$ 100 para comprar jogos, DLCs, assinaturas e mídia na PS Store.",
     details: [
       "Saldo de R$ 100 na PS Store",
@@ -1929,7 +1920,6 @@ export const productsData: Product[] = [
     reviewCount: 3245,
     image: "🎯",
     color: "#171a21",
-    type: "digital",
     description: "Gift Card Steam de R$ 200 para comprar jogos, softwares e itens na maior plataforma de games do PC.",
     details: [
       "Saldo de R$ 200 na Steam",
@@ -1960,7 +1950,6 @@ export const productsData: Product[] = [
     reviewCount: 2345,
     image: "📱",
     color: "#34A853",
-    type: "digital",
     description: "Gift Card Google Play de R$ 50 para comprar apps, jogos, filmes, livros e assinaturas na Google Play Store.",
     details: [
       "Saldo de R$ 50 na Google Play",

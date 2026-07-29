@@ -41,39 +41,27 @@ export default function CheckoutPage() {
   const { items, totalItems, totalPrice, closeCheckout, clearCartLocal } = useCart();
   const { user } = useAuth();
 
-  // ─── Step state ───
   const isLoggedIn = !!user;
   const [step, setStep] = useState<StepId>(isLoggedIn ? "pagamento" : "identificacao");
   const [stepIndex, setStepIndex] = useState(isLoggedIn ? 1 : 0);
 
-  // ─── Step 1: Identificação ───
   const [email, setEmail] = useState("");
   const [guestName, setGuestName] = useState(user?.name || "");
   const [acceptedTerms, setAcceptedTerms] = useState(isLoggedIn);
-
-  // ─── CPF ───
   const [cpf, setCpf] = useState("");
-
-  // ─── Step 2: Pagamento (PIX) ───
   const [pixCopied, setPixCopied] = useState(false);
-
-  // ─── Step 3: Sucesso ───
   const [processing, setProcessing] = useState(false);
   const [orderDone, setOrderDone] = useState(false);
   const [orderId, setOrderId] = useState("");
   const [savedDeliveryContent, setSavedDeliveryContent] = useState<DeliveryContent[]>([]);
-
-  // ─── Validation errors ───
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // ─── Advance step ───
   const goToStep = useCallback((next: StepId) => {
     setStep(next);
     setStepIndex(steps.findIndex((s) => s.id === next));
     setErrors({});
   }, []);
 
-  // ─── Validate step 1 ───
   const validateStep1 = useCallback(() => {
     const errs: Record<string, string> = {};
     if (!email.trim() || !isValidEmail(email)) errs.email = "Email inválido";
@@ -89,18 +77,15 @@ export default function CheckoutPage() {
     return Object.keys(errs).length === 0;
   }, [email, guestName, cpf, acceptedTerms, user]);
 
-  // ─── Handle continue to payment ───
   const handleContinueToPayment = useCallback(() => {
     if (validateStep1()) goToStep("pagamento");
   }, [validateStep1, goToStep]);
 
-  // ─── Process payment ───
   const handleProcessPayment = useCallback(async () => {
     setProcessing(true);
     await new Promise((r) => setTimeout(r, 2500));
     const newId = generateOrderId();
 
-    // Coletar delivery content para produtos digitais
     let deliveryContent: DeliveryContent[] | undefined;
     const digitalItems = items.filter((item) => isDigitalProduct(item.product.id));
     if (digitalItems.length > 0) {
@@ -138,26 +123,20 @@ export default function CheckoutPage() {
     setSavedDeliveryContent(deliveryContent || []);
     setProcessing(false);
     goToStep("sucesso");
-    // Limpa o carrinho LOCALMENTE (sem sync Supabase para evitar freeze)
     clearCartLocal();
-    // Libera o scroll do body
     document.body.style.overflow = "";
   }, [goToStep, clearCartLocal, guestName, email, cpf, items, totalPrice]);
 
-  // ─── PIX copy ───
   const handleCopyPix = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(
         `00020126580014BR.GOV.BCB.PIX0136+5543999999995204000053039865406${totalPrice.toFixed(0).padStart(2, "0")}5802BR5913Satoshi Store6008BRASILIA62070503***6304ABCD`
       );
-    } catch {
-      // fallback
-    }
+    } catch {}
     setPixCopied(true);
     setTimeout(() => setPixCopied(false), 2000);
   }, [totalPrice]);
 
-  // ─── Escape key ───
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeCheckout();
@@ -166,7 +145,6 @@ export default function CheckoutPage() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [closeCheckout]);
 
-  // ─── Save values for success screen (before clearCart resets them) ───
   const [savedTotalPrice, setSavedTotalPrice] = useState(totalPrice);
   const [savedTotalItems, setSavedTotalItems] = useState(totalItems);
 
@@ -177,7 +155,6 @@ export default function CheckoutPage() {
     }
   }, [totalPrice, totalItems, orderDone]);
 
-  // ─── Handle success close ───
   const handleCloseSuccess = useCallback((view?: string) => {
     closeCheckout();
     if (view === "profile") {
@@ -194,11 +171,11 @@ export default function CheckoutPage() {
       className="fixed inset-0 z-[70] bg-surface overflow-y-auto"
     >
       {/* ─── Top Bar ─── */}
-      <div className="sticky top-0 z-30 bg-surface/95 backdrop-blur-xl border-b border-border/30">
+      <div className="sticky top-0 z-30 bg-surface/80 backdrop-blur-xl border-b border-border/30">
         <div className="max-w-3xl mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
           <button
             onClick={stepIndex > 0 && !orderDone ? () => goToStep(steps[stepIndex - 1].id) : closeCheckout}
-            className="flex items-center gap-2 text-text-secondary hover:text-orange-500 glass-card-3d card-shine transition-colors touch-target"
+            className="flex items-center gap-2 text-text-secondary hover:text-orange-500 transition-colors touch-target"
           >
             {stepIndex > 0 && !orderDone ? <ArrowLeft size={18} /> : <X size={18} />}
             <span className="text-sm font-medium">
@@ -206,7 +183,7 @@ export default function CheckoutPage() {
             </span>
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-orange-500/15 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
               <ShoppingBag size={16} className="text-orange-500" />
             </div>
             <span className="text-sm font-semibold text-text-primary">Checkout</span>
