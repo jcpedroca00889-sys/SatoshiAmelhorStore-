@@ -71,7 +71,7 @@ export default function Footer() {
                   <motion.a
                     key={social.label}
                     href={social.href}
-                    className="w-9 h-9 rounded-xl bg-surface-3 hover:bg-surface-4 flex items-center justify-center text-text-tertiary hover:text-orange-500 transition-all duration-300"
+                    className="w-9 h-9 rounded-xl glass card-shine flex items-center justify-center text-text-tertiary hover:text-orange-500 transition-all duration-300"
                     whileHover={{ scale: 1.1, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                     aria-label={social.label}

@@ -126,7 +126,7 @@ export default function Navbar() {
               key={link.name}
               href={link.href}
               onClick={(e) => { e.preventDefault(); handleNavClick(link.href); }}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-secondary hover:text-orange-500 hover:bg-orange-500/10 transition-all duration-200 group"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-secondary hover:text-orange-500 glass-card-3d card-shine transition-all duration-200 group"
             >
               <span className="w-8 h-8 rounded-lg bg-surface-3/60 group-hover:bg-orange-500/15 flex items-center justify-center shrink-0 transition-all">
                 <link.icon size={15} className="group-hover:text-orange-500 transition-colors" />
@@ -148,12 +148,12 @@ export default function Navbar() {
                 </div>
                 <p className="text-[9px] text-text-tertiary truncate">@{user.username}</p>
               </div>
-              <button onClick={handleLogout} className="p-1.5 rounded-lg text-text-tertiary hover:text-red-400 hover:bg-red-500/15 transition-colors group" title="Sair">
+              <button onClick={handleLogout}                     className="p-1.5 rounded-lg text-text-tertiary hover:text-red-400 glass-card-3d card-shine transition-colors group" title="Sair">
                 <LogOut size={13} className="group-hover:scale-110 transition-transform" />
               </button>
             </div>
           ) : (
-            <button onClick={openAuthPage} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl bg-surface-3/20 hover:bg-orange-500/15 hover:border-orange-500/20 transition-all border border-transparent group">
+            <button onClick={openAuthPage} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl glass-card-3d card-shine transition-all group">
               <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
                 <LogIn size={13} />
               </div>
@@ -181,7 +181,7 @@ export default function Navbar() {
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="relative flex items-center gap-1.5 p-1.5 sm:p-2 rounded-xl text-orange-500 bg-orange-500/15 hover:bg-orange-500/25 hover:text-orange-400 transition-all duration-200 shadow-sm shadow-orange-500/10"
+                  className="relative flex items-center gap-1.5 p-1.5 sm:p-2 rounded-xl text-orange-500 glass-card-3d card-shine transition-all duration-200"
                   aria-label="Perfil"
                 >
                   <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-[9px] sm:text-[10px] font-bold">
@@ -224,7 +224,7 @@ export default function Navbar() {
                         ) : (
                           <button
                             onClick={handleLogout}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-text-secondary hover:text-red-400 hover:bg-red-500/5 transition-colors"
+                            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-text-secondary hover:text-red-400 glass-card-3d card-shine transition-colors"
                           >
                             <LogOut size={14} />
                             Sair da conta
@@ -246,12 +246,12 @@ export default function Navbar() {
             )}
             <button
               onClick={() => setSearchOpen(true)}
-              className="p-2 sm:p-2.5 rounded-xl text-orange-500 bg-orange-500/15 hover:bg-orange-500/25 hover:text-orange-400 transition-all duration-200 shadow-sm shadow-orange-500/10"
+              className="p-2 sm:p-2.5 rounded-xl text-orange-500 glass-card-3d card-shine transition-all duration-200"
               aria-label="Buscar"
             >
               <Search size={16} className="sm:size-[18px]" />
             </button>
-            <button onClick={openCartFullPage} className="relative p-2 sm:p-2.5 rounded-xl text-orange-500 bg-orange-500/15 hover:bg-orange-500/25 hover:text-orange-400 transition-all duration-200 shadow-sm shadow-orange-500/10" aria-label="Carrinho">
+            <button onClick={openCartFullPage} className="relative p-2 sm:p-2.5 rounded-xl text-orange-500 glass-card-3d card-shine transition-all duration-200" aria-label="Carrinho">
               <ShoppingCart size={16} className="sm:size-[18px]" />
               {totalItems > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-[18px] sm:h-[18px] bg-orange-500 rounded-full text-[8px] sm:text-[9px] font-bold flex items-center justify-center text-white shadow-sm shadow-orange-500/30">{totalItems > 9 ? '9+' : totalItems}</span>
@@ -270,7 +270,7 @@ export default function Navbar() {
                 const Icon = link.icon;
                 return (
                   <a key={link.name} href={link.href} onClick={(e) => { e.preventDefault(); handleNavClick(link.href); }}
-                    className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-text-tertiary hover:text-orange-500 hover:bg-orange-500/10 transition-colors min-w-[52px] relative group"
+                    className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-text-tertiary hover:text-orange-500 glass-card-3d card-shine transition-colors min-w-[52px] relative group"
                   >
                     <span className="w-8 h-8 rounded-lg flex items-center justify-center group-hover:bg-orange-500/15 transition-all">
                       <Icon size={18} className="group-hover:text-orange-500 transition-colors" />
@@ -319,12 +319,12 @@ export default function Navbar() {
                     autoFocus
                   />
                   {searchQuery && (
-                    <button onClick={() => setSearchQuery("")} className="p-1 rounded-lg hover:bg-surface-3 text-text-tertiary hover:text-text-primary transition-colors">
+                    <button onClick={() => setSearchQuery("")} className="p-1 rounded-lg glass-card-3d card-shine text-text-tertiary hover:text-text-primary transition-colors">
                       <X size={14} />
                     </button>
                   )}
                   <button onClick={() => { setSearchOpen(false); setSearchQuery(""); }}
-                    className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-surface-3 hover:bg-surface-4 text-xs sm:text-sm text-text-secondary transition-colors shrink-0"
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl glass-card-3d card-shine text-xs sm:text-sm text-text-secondary transition-colors shrink-0"
                   >
                     ESC
                   </button>
@@ -350,7 +350,7 @@ export default function Navbar() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.03 }}
                             onClick={() => handleSelectProduct(product)}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-3/60 transition-colors text-left group"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl glass-card-3d card-shine transition-colors text-left group"
                           >
                             <div
                               className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
@@ -397,7 +397,7 @@ export default function Navbar() {
                         <button
                           key={suggestion}
                           onClick={() => setSearchQuery(suggestion)}
-                          className="px-3 py-1 rounded-full bg-surface-3/50 hover:bg-surface-3 text-[10px] text-text-tertiary hover:text-text-secondary transition-colors"
+                          className="px-3 py-1 rounded-full glass-card-3d card-shine text-[10px] text-text-tertiary hover:text-text-secondary transition-colors"
                         >
                           {suggestion}
                         </button>
