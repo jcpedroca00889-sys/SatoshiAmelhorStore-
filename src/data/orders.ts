@@ -51,11 +51,12 @@ export interface Order {
   id: string;
   customerName: string;
   customerEmail: string;
+  customerCPF?: string;
   customerPhone?: string;
   items: OrderItem[];
   total: number;
   status: OrderStatus;
-  deliveryAddress: DeliveryAddress;
+  deliveryAddress?: DeliveryAddress;
   createdAt: string;
   updatedAt: string;
   trackingCode?: string;

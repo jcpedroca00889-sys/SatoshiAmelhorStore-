@@ -4,7 +4,7 @@ import {
   ShoppingBag, X, ArrowLeft, ArrowRight, Check,
   Shield, Clock, MessageCircle, Lock,
   Loader2, Smartphone, QrCode, Copy,
-  CheckCircle2, Mail, User, Package, Send, MapPin,
+  CheckCircle2, Mail, User, Package, Send,
 } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -19,7 +19,6 @@ const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 // ─── Step definitions ───
 const steps = [
   { id: "identificacao", label: "Identificação", icon: User },
-  { id: "endereco", label: "Endereço", icon: MapPin },
   { id: "pagamento", label: "Pagamento", icon: QrCode },
   { id: "sucesso", label: "Confirmação", icon: CheckCircle2 },
 ] as const;
@@ -43,7 +42,7 @@ export default function CheckoutPage() {
 
   // ─── Step state ───
   const isLoggedIn = !!user;
-  const [step, setStep] = useState<StepId>(isLoggedIn ? "endereco" : "identificacao");
+  const [step, setStep] = useState<StepId>(isLoggedIn ? "pagamento" : "identificacao");
   const [stepIndex, setStepIndex] = useState(isLoggedIn ? 1 : 0);
 
   // ─── Step 1: Identificação ───
@@ -51,16 +50,10 @@ export default function CheckoutPage() {
   const [guestName, setGuestName] = useState(user?.name || "");
   const [acceptedTerms, setAcceptedTerms] = useState(isLoggedIn);
 
-  // ─── Step 2: Endereço ───
-  const [addressStreet, setAddressStreet] = useState("");
-  const [addressNumber, setAddressNumber] = useState("");
-  const [addressComplement, setAddressComplement] = useState("");
-  const [addressNeighborhood, setAddressNeighborhood] = useState("");
-  const [addressCity, setAddressCity] = useState("");
-  const [addressState, setAddressState] = useState("");
-  const [addressZip, setAddressZip] = useState("");
+  // ─── CPF ───
+  const [cpf, setCpf] = useState("");
 
-  // ─── Step 3: Pagamento (PIX) ───
+  // ─── Step 2: Pagamento (PIX) ───
   const [pixCopied, setPixCopied] = useState(false);
 
   // ─── Step 3: Sucesso ───
@@ -83,33 +76,21 @@ export default function CheckoutPage() {
     const errs: Record<string, string> = {};
     if (!email.trim() || !isValidEmail(email)) errs.email = "Email inválido";
     if (!guestName.trim()) errs.name = "Nome obrigatório";
+    if (cpf.replace(/\D/g, "").length !== 11) errs.cpf = "CPF inválido";
     if (!acceptedTerms) errs.terms = "Aceite os termos";
-    if (user) return true;
+    if (user) {
+      if (Object.keys(errs).length === 0) return true;
+      setErrors(errs);
+      return false;
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
-  }, [email, guestName, acceptedTerms, user]);
+  }, [email, guestName, cpf, acceptedTerms, user]);
 
-  // ─── Handle continue to address ───
-  const handleContinueToAddress = useCallback(() => {
-    if (validateStep1()) goToStep("endereco");
-  }, [validateStep1, goToStep]);
-
-  // ─── Validate address ───
-  const validateAddress = useCallback(() => {
-    const errs: Record<string, string> = {};
-    if (!addressStreet.trim()) errs.street = "Logradouro obrigatório";
-    if (!addressNumber.trim()) errs.number = "Número obrigatório";
-    if (!addressNeighborhood.trim()) errs.neighborhood = "Bairro obrigatório";
-    if (!addressCity.trim()) errs.city = "Cidade obrigatória";
-    if (!addressState.trim()) errs.state = "Estado obrigatório";
-    if (!addressZip.trim()) errs.zip = "CEP obrigatório";
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  }, [addressStreet, addressNumber, addressNeighborhood, addressCity, addressState, addressZip]);
-
+  // ─── Handle continue to payment ───
   const handleContinueToPayment = useCallback(() => {
-    if (validateAddress()) goToStep("pagamento");
-  }, [validateAddress, goToStep]);
+    if (validateStep1()) goToStep("pagamento");
+  }, [validateStep1, goToStep]);
 
   // ─── Process payment ───
   const handleProcessPayment = useCallback(async () => {
@@ -120,6 +101,7 @@ export default function CheckoutPage() {
       id: newId,
       customerName: guestName,
       customerEmail: email,
+      customerCPF: cpf.replace(/\D/g, ""),
       items: items.map((item) => ({
         productId: item.product.id,
         productName: item.product.name,
@@ -130,15 +112,6 @@ export default function CheckoutPage() {
       })),
       total: totalPrice,
       status: "pending" as const,
-      deliveryAddress: {
-        street: addressStreet,
-        number: addressNumber,
-        complement: addressComplement,
-        neighborhood: addressNeighborhood,
-        city: addressCity,
-        state: addressState,
-        zipCode: addressZip,
-      },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -148,7 +121,7 @@ export default function CheckoutPage() {
     setProcessing(false);
     goToStep("sucesso");
     clearCart();
-  }, [goToStep, clearCart, guestName, email, items, totalPrice, addressStreet, addressNumber, addressComplement, addressNeighborhood, addressCity, addressState, addressZip]);
+  }, [goToStep, clearCart, guestName, email, cpf, items, totalPrice]);
 
   // ─── PIX copy ───
   const handleCopyPix = useCallback(async () => {
@@ -281,24 +254,9 @@ export default function CheckoutPage() {
               key="ident"
               email={email} setEmail={setEmail}
               guestName={guestName} setGuestName={setGuestName}
+              cpf={cpf} setCpf={setCpf}
               acceptedTerms={acceptedTerms} setAcceptedTerms={setAcceptedTerms}
               errors={errors}
-              onContinue={handleContinueToAddress}
-            />
-          )}
-
-          {!orderDone && step === "endereco" && (
-            <StepEndereco
-              key="end"
-              street={addressStreet} setStreet={setAddressStreet}
-              number={addressNumber} setNumber={setAddressNumber}
-              complement={addressComplement} setComplement={setAddressComplement}
-              neighborhood={addressNeighborhood} setNeighborhood={setAddressNeighborhood}
-              city={addressCity} setCity={setAddressCity}
-              state={addressState} setState={setAddressState}
-              zip={addressZip} setZip={setAddressZip}
-              errors={errors}
-              onBack={() => goToStep("identificacao")}
               onContinue={handleContinueToPayment}
             />
           )}
@@ -322,7 +280,6 @@ export default function CheckoutPage() {
               email={email}
               totalPrice={totalPrice}
               totalItems={totalItems}
-              address={{ street: addressStreet, number: addressNumber, neighborhood: addressNeighborhood, city: addressCity, state: addressState }}
               onClose={handleCloseSuccess}
             />
           )}
@@ -376,11 +333,13 @@ export default function CheckoutPage() {
 function StepIdentificacao({
   email, setEmail,
   guestName, setGuestName,
+  cpf, setCpf,
   acceptedTerms, setAcceptedTerms,
   errors, onContinue,
 }: {
   email: string; setEmail: (v: string) => void;
   guestName: string; setGuestName: (v: string) => void;
+  cpf: string; setCpf: (v: string) => void;
   acceptedTerms: boolean; setAcceptedTerms: (v: boolean) => void;
   errors: Record<string, string>;
   onContinue: () => void;
@@ -425,6 +384,29 @@ function StepIdentificacao({
             {guestName.length > 0 && <Check size={14} className="text-green-400 shrink-0" />}
           </div>
           {errors.name && <p className="text-[10px] text-red-400 mt-1">{errors.name}</p>}
+        </div>
+
+        <div>
+          <label className="text-xs font-medium text-text-secondary mb-1.5 block">CPF</label>
+          <div className={`relative flex items-center gap-2.5 px-4 py-3 rounded-xl border transition-all duration-300 ${
+            errors.cpf ? "border-red-500/50 bg-red-500/5" : cpf.length === 14 ? "border-green-500/30 bg-surface-2/40" : "border-border/30 bg-surface-2/30 hover:border-border/60"
+          }`}>
+            <Shield size={15} className={`shrink-0 ${errors.cpf ? "text-red-400" : "text-text-tertiary"}`} />
+            <input
+              type="text" value={cpf} onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                let formatted = digits;
+                if (digits.length > 3) formatted = digits.slice(0, 3) + "." + digits.slice(3);
+                if (digits.length > 6) formatted = formatted.slice(0, 7) + "." + formatted.slice(7);
+                if (digits.length > 9) formatted = formatted.slice(0, 11) + "-" + formatted.slice(11);
+                setCpf(formatted);
+              }}
+              placeholder="000.000.000-00"
+              className="w-full bg-transparent text-text-primary text-sm placeholder:text-text-tertiary/60 focus:outline-none"
+            />
+            {cpf.length === 14 && <Check size={14} className="text-green-400 shrink-0" />}
+          </div>
+          {errors.cpf && <p className="text-[10px] text-red-400 mt-1">{errors.cpf}</p>}
         </div>
 
         <div>
@@ -481,155 +463,6 @@ function StepIdentificacao({
           Continuar para Pagamento
           <ArrowRight size={16} />
         </motion.button>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════
-//  STEP 2 - ENDEREÇO
-// ════════════════════════════════════════════════════════════
-
-function StepEndereco({
-  street, setStreet, number, setNumber, complement, setComplement,
-  neighborhood, setNeighborhood, city, setCity, state, setState, zip, setZip,
-  errors, onBack, onContinue,
-}: {
-  street: string; setStreet: (v: string) => void;
-  number: string; setNumber: (v: string) => void;
-  complement: string; setComplement: (v: string) => void;
-  neighborhood: string; setNeighborhood: (v: string) => void;
-  city: string; setCity: (v: string) => void;
-  state: string; setState: (v: string) => void;
-  zip: string; setZip: (v: string) => void;
-  errors: Record<string, string>;
-  onBack: () => void;
-  onContinue: () => void;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -30 }}
-      transition={{ type: "spring", stiffness: 260, damping: 24 }}
-    >
-      <div className="text-center mb-8">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.1 }}
-          className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mb-4 shadow-lg shadow-orange-500/20"
-        >
-          <MapPin size={24} className="text-white" />
-        </motion.div>
-        <h2 className="text-xl sm:text-2xl font-bold text-text-primary">Endereço de Entrega</h2>
-        <p className="text-sm text-text-tertiary mt-1">Informe onde deseja receber seu pedido</p>
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="glass rounded-2xl border border-border/30 p-5 sm:p-6 space-y-4 max-w-lg mx-auto"
-      >
-        {/* Row: Street + Number */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="col-span-2">
-            <label className="text-xs font-medium text-text-secondary mb-1 block">Logradouro</label>
-            <div className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border transition-all ${
-              errors.street ? "border-red-500/50 bg-red-500/5" : "border-border/30 bg-surface-2/30 hover:border-border/60"
-            }`}>
-              <input type="text" value={street} onChange={(e) => setStreet(e.target.value)}
-                placeholder="Rua, Av, etc" className="w-full bg-transparent text-text-primary text-sm placeholder:text-text-tertiary/60 focus:outline-none" />
-            </div>
-            {errors.street && <p className="text-[10px] text-red-400 mt-1">{errors.street}</p>}
-          </div>
-          <div>
-            <label className="text-xs font-medium text-text-secondary mb-1 block">Número</label>
-            <div className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border transition-all ${
-              errors.number ? "border-red-500/50 bg-red-500/5" : "border-border/30 bg-surface-2/30 hover:border-border/60"
-            }`}>
-              <input type="text" value={number} onChange={(e) => setNumber(e.target.value)}
-                placeholder="Nº" className="w-full bg-transparent text-text-primary text-sm placeholder:text-text-tertiary/60 focus:outline-none" />
-            </div>
-            {errors.number && <p className="text-[10px] text-red-400 mt-1">{errors.number}</p>}
-          </div>
-        </div>
-
-        {/* Complemento */}
-        <div>
-          <label className="text-xs font-medium text-text-secondary mb-1 block">Complemento</label>
-          <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl border border-border/30 bg-surface-2/30 hover:border-border/60 transition-all">
-            <input type="text" value={complement} onChange={(e) => setComplement(e.target.value)}
-              placeholder="Apto, Bloco, Sala (opcional)" className="w-full bg-transparent text-text-primary text-sm placeholder:text-text-tertiary/60 focus:outline-none" />
-          </div>
-        </div>
-
-        {/* Row: Bairro + CEP */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-medium text-text-secondary mb-1 block">Bairro</label>
-            <div className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border transition-all ${
-              errors.neighborhood ? "border-red-500/50 bg-red-500/5" : "border-border/30 bg-surface-2/30 hover:border-border/60"
-            }`}>
-              <input type="text" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)}
-                placeholder="Bairro" className="w-full bg-transparent text-text-primary text-sm placeholder:text-text-tertiary/60 focus:outline-none" />
-            </div>
-            {errors.neighborhood && <p className="text-[10px] text-red-400 mt-1">{errors.neighborhood}</p>}
-          </div>
-          <div>
-            <label className="text-xs font-medium text-text-secondary mb-1 block">CEP</label>
-            <div className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border transition-all ${
-              errors.zip ? "border-red-500/50 bg-red-500/5" : "border-border/30 bg-surface-2/30 hover:border-border/60"
-            }`}>
-              <input type="text" value={zip} onChange={(e) => setZip(e.target.value)}
-                placeholder="00000-000" className="w-full bg-transparent text-text-primary text-sm placeholder:text-text-tertiary/60 focus:outline-none" />
-            </div>
-            {errors.zip && <p className="text-[10px] text-red-400 mt-1">{errors.zip}</p>}
-          </div>
-        </div>
-
-        {/* Row: Cidade + Estado */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="col-span-2">
-            <label className="text-xs font-medium text-text-secondary mb-1 block">Cidade</label>
-            <div className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border transition-all ${
-              errors.city ? "border-red-500/50 bg-red-500/5" : "border-border/30 bg-surface-2/30 hover:border-border/60"
-            }`}>
-              <input type="text" value={city} onChange={(e) => setCity(e.target.value)}
-                placeholder="Cidade" className="w-full bg-transparent text-text-primary text-sm placeholder:text-text-tertiary/60 focus:outline-none" />
-            </div>
-            {errors.city && <p className="text-[10px] text-red-400 mt-1">{errors.city}</p>}
-          </div>
-          <div>
-            <label className="text-xs font-medium text-text-secondary mb-1 block">Estado</label>
-            <div className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border transition-all ${
-              errors.state ? "border-red-500/50 bg-red-500/5" : "border-border/30 bg-surface-2/30 hover:border-border/60"
-            }`}>
-              <input type="text" value={state} onChange={(e) => setState(e.target.value)}
-                placeholder="UF" maxLength={2} className="w-full bg-transparent text-text-primary text-sm placeholder:text-text-tertiary/60 focus:outline-none uppercase" />
-            </div>
-            {errors.state && <p className="text-[10px] text-red-400 mt-1">{errors.state}</p>}
-          </div>
-        </div>
-
-        {/* Buttons */}
-        <div className="flex gap-3 pt-2">
-          <button onClick={onBack}
-            className="flex-1 py-3.5 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-text-primary text-sm font-medium transition-all">
-            Voltar
-          </button>
-          <motion.button
-            onClick={onContinue}
-            whileHover={{ scale: 1.01, y: -1 }}
-            whileTap={{ scale: 0.98 }}
-            className="flex-[2] flex items-center justify-center gap-2 py-3.5 rounded-xl glass-card-3d card-shine text-white font-semibold text-sm relative overflow-hidden group"
-          >
-            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-            Continuar para Pagamento
-            <ArrowRight size={16} />
-          </motion.button>
-        </div>
       </motion.div>
     </motion.div>
   );
@@ -812,11 +645,10 @@ function StepProcessing() {
 // ════════════════════════════════════════════════════════════
 
 function StepSucesso({
-  orderId, guestName, email, totalPrice, totalItems, address, onClose,
+  orderId, guestName, email, totalPrice, totalItems, onClose,
 }: {
   orderId: string; guestName: string; email: string;
   totalPrice: number; totalItems: number;
-  address?: { street: string; number: string; neighborhood: string; city: string; state: string };
   onClose: (view?: string) => void;
 }) {
   return (
@@ -905,17 +737,13 @@ function StepSucesso({
               <p className="text-xs font-medium text-text-primary">{email}</p>
             </div>
           </div>
-          {address && (
-            <div className="flex items-start gap-2.5">
-              <MapPin size={13} className="text-text-tertiary mt-0.5 shrink-0" />
-              <div>
-                <p className="text-[10px] text-text-tertiary">Endereço de entrega</p>
-                <p className="text-xs font-medium text-text-primary">
-                  {address.street}, {address.number} &mdash; {address.neighborhood}, {address.city}/{address.state}
-                </p>
-              </div>
+          <div className="flex items-start gap-2.5">
+            <Shield size={13} className="text-text-tertiary mt-0.5 shrink-0" />
+            <div>
+              <p className="text-[10px] text-text-tertiary">CPF na nota</p>
+              <p className="text-xs font-medium text-text-primary">Registrado na compra</p>
             </div>
-          )}
+          </div>
           <div className="flex items-start gap-2.5">
             <Send size={13} className="text-orange-500 mt-0.5 shrink-0" />
             <div>
