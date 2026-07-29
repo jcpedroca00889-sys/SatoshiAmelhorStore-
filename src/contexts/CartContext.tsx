@@ -15,6 +15,7 @@ interface CartContextType {
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
+  clearCartLocal: () => void;
   totalItems: number;
   totalPrice: number;
   isCartOpen: boolean;
@@ -26,6 +27,8 @@ interface CartContextType {
   isCheckoutOpen: boolean;
   openCheckout: () => void;
   closeCheckout: () => void;
+  addedItemName: string | null;
+  clearAddedFeedback: () => void;
 }
 
 const CartContext = createContext<CartContextType>({} as CartContextType);
@@ -51,7 +54,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartFullPage, setIsCartFullPage] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [addedItemName, setAddedItemName] = useState<string | null>(null);
   const { user } = useAuth();
+
+  const clearAddedFeedback = useCallback(() => setAddedItemName(null), []);
 
   // Persist on change
   useEffect(() => { saveCart(items); }, [items]);
@@ -107,6 +113,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       syncToSupabase(updated);
       return updated;
     });
+    setAddedItemName(product.name);
+    setTimeout(() => setAddedItemName(null), 2000);
   }, [syncToSupabase]);
 
   const removeItem = useCallback((productId: string) => {
@@ -138,8 +146,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clearCart = useCallback(() => {
     setItems([]);
     localStorage.removeItem(STORAGE_KEY);
-    syncToSupabase([]);
+    syncToSupabase([]).catch(() => {});
   }, [syncToSupabase]);
+
+  const clearCartLocal = useCallback(() => {
+    setItems([]);
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
 
   const openCart = useCallback(() => setIsCartOpen(true), []);
   const closeCart = useCallback(() => setIsCartOpen(false), []);
@@ -151,11 +164,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   return (
     <CartContext.Provider
       value={{
-        items, addItem, removeItem, updateQuantity, clearCart,
+        items, addItem, removeItem, updateQuantity, clearCart, clearCartLocal,
         totalItems, totalPrice,
         isCartOpen, openCart, closeCart,
         isCartFullPage, openCartFullPage, closeCartFullPage,
         isCheckoutOpen, openCheckout, closeCheckout,
+        addedItemName, clearAddedFeedback,
       }}
     >
       {children}
