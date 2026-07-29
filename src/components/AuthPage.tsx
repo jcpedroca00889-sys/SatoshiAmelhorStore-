@@ -159,13 +159,13 @@ export default function AuthPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
           <button
             onClick={closeAuthPage}
-            className="flex items-center gap-1.5 text-text-secondary hover:text-orange-500 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-text-secondary hover:text-orange-500 glass-card-3d card-shine transition-colors cursor-pointer"
           >
             <ArrowLeft size={16} />
             <span className="text-xs font-medium">Voltar</span>
           </button>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-500/10 text-orange-500 text-[10px] font-medium">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg glass-glow text-orange-500 text-[10px] font-medium">
               <Shield size={12} />
               Satoshi Store
             </div>
@@ -233,7 +233,7 @@ export default function AuthPage() {
                     <div className="space-y-3">
                       <button
                         onClick={() => setStep("login-username")}
-                        className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold text-xs transition-all shadow-md shadow-orange-500/20 cursor-pointer"
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-lg glass-card-3d card-shine text-white font-semibold text-xs transition-all cursor-pointer"
                       >
                         <LogIn size={14} />
                         Sim, já tenho conta
@@ -241,7 +241,7 @@ export default function AuthPage() {
                       </button>
                       <button
                         onClick={() => setStep("register-name")}
-                        className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-surface-3/20 hover:bg-surface-3/40 border border-border/20 hover:border-orange-500/20 text-text-secondary hover:text-text-primary font-semibold text-xs transition-all cursor-pointer"
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-lg glass-card-3d card-shine text-text-secondary hover:text-text-primary font-semibold text-xs transition-all cursor-pointer"
                       >
                         <UserPlus size={14} />
                         Não, quero cadastrar
@@ -281,7 +281,7 @@ export default function AuthPage() {
                       <button
                         onClick={next}
                         disabled={!canGo() || loading || success}
-                        className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold text-xs disabled:opacity-50 transition-all shadow-md shadow-orange-500/20 cursor-pointer"
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-lg glass-card-3d card-shine text-white font-semibold text-xs disabled:opacity-50 transition-all cursor-pointer"
                       >
                         {loading ? (
                           <Loader2 size={15} className="animate-spin" />
@@ -351,7 +351,7 @@ export default function AuthPage() {
                             <button
                               type="button"
                               onClick={() => setShowPw(!showPw)}
-                              className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-surface-3/50 transition-colors cursor-pointer"
+                              className="p-1 rounded-md glass-card-3d card-shine text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
                               tabIndex={-1}
                             >
                               {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -380,7 +380,7 @@ export default function AuthPage() {
                       <button
                         onClick={next}
                         disabled={!canGo() || loading || success}
-                        className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold text-xs disabled:opacity-50 transition-all shadow-md shadow-orange-500/20 cursor-pointer"
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-lg glass-card-3d card-shine text-white font-semibold text-xs disabled:opacity-50 transition-all cursor-pointer"
                       >
                         {loading ? (
                           <Loader2 size={15} className="animate-spin" />
@@ -403,7 +403,7 @@ export default function AuthPage() {
                 <div className="mt-4 text-center">
                   <button
                     onClick={back}
-                    className="flex items-center justify-center gap-1 text-[10px] text-text-tertiary hover:text-orange-500 transition-colors w-full cursor-pointer"
+                    className="flex items-center justify-center gap-1 text-[10px] text-text-tertiary hover:text-orange-500 glass-card-3d card-shine transition-colors w-full cursor-pointer"
                   >
                     <ArrowLeft size={12} />
                     Voltar

@@ -69,7 +69,7 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-surface-3/50 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg glass text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
               >
                 <X size={16} />
               </button>
@@ -103,7 +103,7 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
             <div className="shrink-0 px-5 py-3 border-t border-border/20 flex justify-end">
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-orange-500/15 text-orange-500 hover:bg-orange-500/25 text-xs font-medium transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-lg glass-glow text-orange-500 hover:text-orange-400 text-xs font-medium transition-all cursor-pointer"
               >
                 Fechar
               </button>
