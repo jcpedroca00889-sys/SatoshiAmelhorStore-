@@ -162,6 +162,7 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
   const [saved, setSaved] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "categories">("dashboard");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -263,6 +264,49 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
     [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
     saveCategories(updated);
     setCategories(updated);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === paginated.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginated.map((p) => p.id)));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    setConfirmState({
+      title: "Excluir produtos",
+      message: `Deseja excluir ${selectedIds.size} produto(s)?`,
+      onConfirm: () => {
+        const updated = products.filter((p) => !selectedIds.has(p.id));
+        saveProducts(updated);
+        setProducts(updated);
+        setSelectedIds(new Set());
+        setConfirmState(null);
+      },
+    });
+  };
+
+  const handleBulkMoveCategory = (targetCategory: string) => {
+    if (selectedIds.size === 0 || !targetCategory) return;
+    const updated = products.map((p) =>
+      selectedIds.has(p.id) ? { ...p, category: targetCategory } : p
+    );
+    saveProducts(updated);
+    setProducts(updated);
+    setSelectedIds(new Set());
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
 
   const handleDuplicate = (product: Product) => {
@@ -490,6 +534,26 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
               </button>
             </div>
 
+            {/* Bulk actions */}
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-3 px-4 py-2.5 mb-3 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                <span className="text-xs text-text-secondary">{selectedIds.size} selecionado(s)</span>
+                <div className="flex-1" />
+                <select
+                  onChange={(e) => { if (e.target.value) { handleBulkMoveCategory(e.target.value); e.target.value = ""; } }}
+                  className="px-2.5 py-1.5 rounded-lg border border-border/30 bg-surface-2/30 text-xs text-text-primary focus:border-orange-500/50 focus:outline-none transition-all"
+                >
+                  <option value="">Mover para...</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                <button onClick={handleBulkDelete} className="px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 hover:bg-red-500/25 text-xs font-medium transition-colors">
+                  Excluir
+                </button>
+              </div>
+            )}
+
             {paginated.length === 0 ? (
               <div className="flex flex-col items-center gap-4 py-20 text-center">
                 <Package size={40} className="text-text-tertiary/30" />
@@ -498,7 +562,13 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
             ) : (
               <div className="space-y-2">
                 <div className="hidden sm:grid grid-cols-12 gap-3 px-4 py-2 text-[10px] text-text-tertiary uppercase tracking-wider font-medium">
-                  <button onClick={() => handleSort("name")} className="col-span-4 flex items-center text-left hover:text-text-primary transition-colors">
+                  <div className="col-span-1 flex items-center">
+                    <input type="checkbox"
+                      checked={paginated.length > 0 && selectedIds.size === paginated.length}
+                      onChange={toggleSelectAll}
+                      className="w-3.5 h-3.5 rounded border-border/40 bg-surface-2/30 accent-orange-500 cursor-pointer" />
+                  </div>
+                  <button onClick={() => handleSort("name")} className="col-span-3 flex items-center text-left hover:text-text-primary transition-colors">
                     Produto <SortIcon field="name" />
                   </button>
                   <button onClick={() => handleSort("category")} className="col-span-2 flex items-center text-left hover:text-text-primary transition-colors">
@@ -513,8 +583,16 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
                   <div className="col-span-2 text-right">Ações</div>
                 </div>
                 {paginated.map((product) => (
-                  <div key={product.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center px-4 py-3 rounded-xl glass-card-3d card-shine border border-border/20 hover:border-orange-500/20 transition-all">
-                    <div className="col-span-4 flex items-center gap-3">
+                  <div key={product.id} className={`grid grid-cols-1 sm:grid-cols-12 gap-3 items-center px-4 py-3 rounded-xl glass-card-3d card-shine border transition-all ${
+                    selectedIds.has(product.id) ? "border-orange-500/40" : "border-border/20 hover:border-orange-500/20"
+                  }`}>
+                    <div className="col-span-1 flex items-center">
+                      <input type="checkbox"
+                        checked={selectedIds.has(product.id)}
+                        onChange={() => toggleSelect(product.id)}
+                        className="w-3.5 h-3.5 rounded border-border/40 bg-surface-2/30 accent-orange-500 cursor-pointer" />
+                    </div>
+                    <div className="col-span-3 flex items-center gap-3">
                       <span className="text-xl shrink-0">{product.image}</span>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-text-primary truncate">{product.name}</p>
