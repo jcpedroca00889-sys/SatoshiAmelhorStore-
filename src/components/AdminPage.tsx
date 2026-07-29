@@ -162,6 +162,7 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
   const [saved, setSaved] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"products" | "categories">("products");
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const PER_PAGE = 10;
 
   useEffect(() => {
@@ -170,15 +171,21 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
   }, []);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return products;
-    const q = search.toLowerCase();
-    return products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q) ||
-        p.id.includes(q)
-    );
-  }, [products, search]);
+    let result = products;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q) ||
+          p.id.includes(q)
+      );
+    }
+    if (categoryFilter) {
+      result = result.filter((p) => p.category === categoryFilter);
+    }
+    return result;
+  }, [products, search, categoryFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paginated = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
@@ -365,7 +372,7 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
         {/* Products Tab */}
         {activeTab === "products" && (
           <>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-2 mb-6">
               <div className="flex-1 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border/30 bg-surface-2/30 focus-within:border-orange-500/50 transition-all">
                 <Search size={16} className="text-text-tertiary shrink-0" />
                 <input
@@ -376,6 +383,16 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
                   className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-tertiary/60 focus:outline-none"
                 />
               </div>
+              <select
+                value={categoryFilter || ""}
+                onChange={(e) => { setCategoryFilter(e.target.value || null); setPage(0); }}
+                className="px-3 py-2.5 rounded-xl border border-border/30 bg-surface-2/30 text-sm text-text-primary focus:border-orange-500/50 focus:outline-none transition-all"
+              >
+                <option value="">Todas</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
               <button
                 onClick={() => { setEditing(emptyProduct()); setIsNew(true); }}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card-3d card-shine text-white font-medium text-sm"
