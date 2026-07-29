@@ -1,6 +1,6 @@
 import { memo, useState, useCallback, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, ChevronLeft, ChevronRight, ShoppingBag, Star, ArrowUpDown, ArrowUp, ArrowDown, Check } from "lucide-react";
+import { Sparkles, ChevronLeft, ChevronRight, ShoppingBag, Star, ArrowUpDown, ArrowUp, ArrowDown, Check, RotateCcw, DollarSign } from "lucide-react";
 import { productsData } from "../data/products";
 import { useDragScroll } from "../hooks/useDragScroll";
 import { useCart } from "../contexts/CartContext";
@@ -451,16 +451,137 @@ function CategoryFilterBar({ selectedCategory, onCategoryChange }: CategoryFilte
   );
 }
 
-// ==================== Filtered Category View ====================
-function FilteredCategoryView({
-  categoryName, products, onSelectProduct,
-}: {
-  categoryName: string; products: typeof productsData; onSelectProduct: (id: string) => void;
-}) {
-  const [sort, setSort] = useState<SortOption>("relevance");
+// ==================== Price Range Filter ====================
+const PRICE_PRESETS = [
+  { label: "Até R$100", min: 0, max: 100 },
+  { label: "R$100 - R$500", min: 100, max: 500 },
+  { label: "R$500 - R$2.000", min: 500, max: 2000 },
+  { label: "R$2.000 - R$5.000", min: 2000, max: 5000 },
+  { label: "R$5.000 - R$10.000", min: 5000, max: 10000 },
+  { label: "Acima de R$10.000", min: 10000, max: Infinity },
+];
+
+interface PriceRangeFilterProps {
+  priceMin: number | null;
+  priceMax: number | null;
+  onPriceMinChange: (v: number | null) => void;
+  onPriceMaxChange: (v: number | null) => void;
+}
+
+function PriceRangeFilter({ priceMin, priceMax, onPriceMinChange, onPriceMaxChange }: PriceRangeFilterProps) {
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const activePreset = PRICE_PRESETS.find(
+    (p) => (priceMin ?? -1) === p.min && ((priceMax ?? Infinity) === p.max || (p.max === Infinity && priceMax === null))
+  );
+
+  const hasPriceFilter = priceMin !== null || priceMax !== null;
+
+  const handlePreset = (p: typeof PRICE_PRESETS[0]) => {
+    onPriceMinChange(p.min);
+    onPriceMaxChange(p.max === Infinity ? null : p.max);
+    setShowDropdown(false);
+  };
+
+  return (
+    <div className="relative">
+      <button onClick={() => setShowDropdown(!showDropdown)}
+        className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs sm:text-sm transition-all ${
+          hasPriceFilter
+            ? "bg-orange-500/10 border-orange-500/30 text-orange-500"
+            : "bg-surface-2/30 border-border/30 text-text-secondary hover:text-orange-500 hover:border-orange-500/20"
+        }`}
+      >
+        <DollarSign size={14} />
+        <span>{activePreset ? activePreset.label : "Preço"}</span>
+        {hasPriceFilter && (
+          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+        )}
+      </button>
+
+      {showDropdown && (
+        <>
+          <div className="fixed inset-0 z-[60]" onClick={() => setShowDropdown(false)} />
+          <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+            className="absolute top-full mt-1 left-0 z-20 w-52 glass rounded-xl border border-border/50 shadow-xl overflow-hidden p-3"
+          >
+            <p className="text-[10px] font-semibold text-text-tertiary uppercase tracking-wider mb-2">Faixa de Preço</p>
+
+            {/* Custom range inputs */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="relative flex-1">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-text-tertiary">R$</span>
+                <input
+                  type="number"
+                  placeholder="Mín"
+                  value={priceMin ?? ""}
+                  onChange={(e) => onPriceMinChange(e.target.value ? Number(e.target.value) : null)}
+                  className="w-full bg-surface-2/50 border border-border/30 rounded-lg px-6 py-1.5 text-xs text-text-primary placeholder-text-tertiary/50 focus:outline-none focus:border-orange-500/50 transition-colors"
+                  min={0}
+                />
+              </div>
+              <span className="text-text-tertiary text-xs">—</span>
+              <div className="relative flex-1">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-text-tertiary">R$</span>
+                <input
+                  type="number"
+                  placeholder="Máx"
+                  value={priceMax ?? ""}
+                  onChange={(e) => onPriceMaxChange(e.target.value ? Number(e.target.value) : null)}
+                  className="w-full bg-surface-2/50 border border-border/30 rounded-lg px-6 py-1.5 text-xs text-text-primary placeholder-text-tertiary/50 focus:outline-none focus:border-orange-500/50 transition-colors"
+                  min={0}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              {PRICE_PRESETS.map((p) => {
+                const isActive = activePreset === p;
+                return (
+                  <button key={p.label} onClick={() => handlePreset(p)}
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-all ${
+                      isActive
+                        ? "bg-orange-500/10 text-orange-500"
+                        : "text-text-secondary hover:bg-surface-2/50 hover:text-text-primary"
+                    }`}
+                  >
+                    <span>{p.label}</span>
+                    {isActive && <Check size={12} />}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ==================== Filtered Grid View ====================
+interface FilteredGridViewProps {
+  categoryName: string;
+  products: typeof productsData;
+  totalCount: number;
+  onSelectProduct: (id: string) => void;
+  sort: SortOption;
+  onSortChange: (s: SortOption) => void;
+  priceMin: number | null;
+  priceMax: number | null;
+  onPriceMinChange: (v: number | null) => void;
+  onPriceMaxChange: (v: number | null) => void;
+  onClearAll: () => void;
+}
+
+function FilteredGridView({
+  categoryName, products, totalCount, onSelectProduct,
+  sort, onSortChange,
+  priceMin, priceMax, onPriceMinChange, onPriceMaxChange, onClearAll,
+}: FilteredGridViewProps) {
   const [showSortMenu, setShowSortMenu] = useState(false);
 
   const sortedProducts = useMemo(() => sortProducts(products, sort), [products, sort]);
+  const hasAnyFilter = categoryName !== "Todos" || priceMin !== null || priceMax !== null || sort !== "relevance";
 
   return (
     <div className="mt-3">
@@ -469,18 +590,46 @@ function FilteredCategoryView({
           <span className="text-2xl">{categoryIcons[categoryName] || "📦"}</span>
           <div>
             <h3 className="text-xl sm:text-2xl font-bold text-text-primary">{categoryName}</h3>
-            <p className="text-xs sm:text-sm text-text-tertiary">{products.length} produto{products.length !== 1 ? "s" : ""} disponíve{products.length !== 1 ? "is" : "l"}</p>
+            <p className="text-xs sm:text-sm text-text-tertiary">{sortedProducts.length} de {totalCount} produto{sortedProducts.length !== 1 ? "s" : ""}</p>
           </div>
+
+          {/* Clear all filters */}
+          {hasAnyFilter && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              onClick={onClearAll}
+              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-2/30 border border-border/30 text-[10px] text-text-tertiary hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/5 transition-all"
+            >
+              <RotateCcw size={12} />
+              Limpar filtros
+            </motion.button>
+          )}
         </div>
       </motion.div>
 
-      <div className="flex items-center justify-between mb-3 gap-3">
+      {/* Filter & Sort Toolbar */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <PriceRangeFilter
+          priceMin={priceMin}
+          priceMax={priceMax}
+          onPriceMinChange={onPriceMinChange}
+          onPriceMaxChange={onPriceMaxChange}
+        />
+
         <div className="relative">
           <button onClick={() => setShowSortMenu(!showSortMenu)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-2/30 border border-border/30 text-xs sm:text-sm text-text-secondary hover:text-orange-500 transition-colors"
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs sm:text-sm transition-all ${
+              sort !== "relevance"
+                ? "bg-orange-500/10 border-orange-500/30 text-orange-500"
+                : "bg-surface-2/30 border-border/30 text-text-secondary hover:text-orange-500 hover:border-orange-500/20"
+            }`}
           >
             <ArrowUpDown size={14} />
             {sortOptions.find((o) => o.value === sort)?.label || "Ordenar"}
+            {sort !== "relevance" && (
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+            )}
           </button>
           {showSortMenu && (
             <>
@@ -489,7 +638,7 @@ function FilteredCategoryView({
                 className="absolute top-full mt-1 left-0 z-20 w-44 glass rounded-xl border border-border/50 shadow-xl overflow-hidden"
               >
                 {sortOptions.map((option) => (
-                  <button key={option.value} onClick={() => { setSort(option.value); setShowSortMenu(false); }}
+                  <button key={option.value} onClick={() => { onSortChange(option.value); setShowSortMenu(false); }}
                     className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-xs transition-colors ${
                       sort === option.value
                         ? "text-orange-500 bg-orange-500/10"
@@ -505,12 +654,9 @@ function FilteredCategoryView({
             </>
           )}
         </div>
-
-        <span className="text-[10px] sm:text-xs text-text-tertiary">
-          {sortedProducts.length} de {products.length} produtos
-        </span>
       </div>
 
+      {/* Product Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
         {sortedProducts.map((product, i) => (
           <ProductCardGrid key={product.id} product={product} index={i} onSelectProduct={onSelectProduct} />
@@ -518,10 +664,19 @@ function FilteredCategoryView({
       </div>
 
       {sortedProducts.length === 0 && (
-        <div className="flex flex-col items-center gap-3 py-8">
-          <span className="text-4xl">📦</span>
-          <p className="text-sm text-text-tertiary">Nenhum produto encontrado</p>
-        </div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          className="flex flex-col items-center gap-3 py-12"
+        >
+          <span className="text-5xl">🔍</span>
+          <p className="text-sm font-medium text-text-primary">Nenhum produto encontrado</p>
+          <p className="text-xs text-text-tertiary">Tente ajustar os filtros ou escolher outra categoria</p>
+          <button onClick={onClearAll}
+            className="mt-2 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-500/10 text-orange-500 text-xs font-medium border border-orange-500/20 hover:bg-orange-500/20 transition-all"
+          >
+            <RotateCcw size={12} />
+            Limpar todos os filtros
+          </button>
+        </motion.div>
       )}
     </div>
   );
@@ -535,6 +690,9 @@ interface ProductsByCategoryProps {
 export default function ProductsByCategory({ onProductSelect }: ProductsByCategoryProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedCategoryName, setSelectedCategoryName] = useState("Todos");
+  const [priceMin, setPriceMin] = useState<number | null>(null);
+  const [priceMax, setPriceMax] = useState<number | null>(null);
+  const [sortOption, setSortOption] = useState<SortOption>("relevance");
 
   const categoryEntries = useMemo(() => {
     return Object.entries(
@@ -547,14 +705,37 @@ export default function ProductsByCategory({ onProductSelect }: ProductsByCatego
     );
   }, []);
 
-  const filteredProducts = useMemo(() => {
-    if (!selectedCategory || selectedCategory === "todos") return null;
-    return productsData.filter((p) => p.category.toLowerCase() === selectedCategory);
-  }, [selectedCategory]);
+  const hasActiveFilters = selectedCategory !== null || priceMin !== null || priceMax !== null || sortOption !== "relevance";
+
+  const allFilteredProducts = useMemo(() => {
+    let result = [...productsData];
+
+    // Apply category filter
+    if (selectedCategory && selectedCategory !== "todos") {
+      result = result.filter((p) => p.category.toLowerCase() === selectedCategory);
+    }
+
+    // Apply price filter
+    if (priceMin !== null) result = result.filter((p) => p.priceNumber >= priceMin);
+    if (priceMax !== null) result = result.filter((p) => p.priceNumber <= priceMax);
+
+    // Apply sort
+    result = sortProducts(result, sortOption);
+
+    return result;
+  }, [selectedCategory, priceMin, priceMax, sortOption]);
 
   const handleCategoryChange = useCallback((id: string | null, name: string) => {
-    setSelectedCategory(id);
-    setSelectedCategoryName(name);
+    setSelectedCategory(id === "todos" ? null : id);
+    setSelectedCategoryName(id === "todos" ? "Todos" : name);
+  }, []);
+
+  const handleClearAll = useCallback(() => {
+    setSelectedCategory(null);
+    setSelectedCategoryName("Todos");
+    setPriceMin(null);
+    setPriceMax(null);
+    setSortOption("relevance");
   }, []);
 
   const handleSelect = useCallback((id: string) => onProductSelect(id), [onProductSelect]);
@@ -569,25 +750,37 @@ export default function ProductsByCategory({ onProductSelect }: ProductsByCatego
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-orange-500/10 border border-orange-500/20 rounded-full text-sm text-orange-500 mb-4">
             <Sparkles size={14} />
-            <span>{selectedCategory && selectedCategory !== "todos" ? selectedCategoryName : "Todos os Produtos"}</span>
+            <span>
+              {hasActiveFilters
+                ? selectedCategoryName !== "Todos" ? selectedCategoryName : "Resultados Filtrados"
+                : "Todos os Produtos"}
+            </span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
             Escolha o <span className="gradient-text">Melhor</span> para Você
           </h2>
           <p className="text-text-secondary text-sm sm:text-base mt-1 max-w-xl mx-auto">
-            {selectedCategory && selectedCategory !== "todos"
-              ? `Explore todos os produtos de ${selectedCategoryName}`
+            {hasActiveFilters
+              ? `${allFilteredProducts.length} produto${allFilteredProducts.length !== 1 ? "s" : ""} encontrado${allFilteredProducts.length !== 1 ? "s" : ""}`
               : "Navegue por categorias e encontre o produto perfeito."}
           </p>
         </motion.div>
 
         <CategoryFilterBar selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
 
-        {filteredProducts ? (
-          <FilteredCategoryView
+        {hasActiveFilters ? (
+          <FilteredGridView
             categoryName={selectedCategoryName}
-            products={filteredProducts}
+            products={allFilteredProducts}
+            totalCount={productsData.length}
             onSelectProduct={handleSelect}
+            sort={sortOption}
+            onSortChange={setSortOption}
+            priceMin={priceMin}
+            priceMax={priceMax}
+            onPriceMinChange={setPriceMin}
+            onPriceMaxChange={setPriceMax}
+            onClearAll={handleClearAll}
           />
         ) : (
           <div className="space-y-6 sm:space-y-8 mt-4">
