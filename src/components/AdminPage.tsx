@@ -495,6 +495,11 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
         {activeTab === "categories" && (
           <CategoriesManager
             categories={categories}
+            productCounts={useMemo(() => {
+              const counts: Record<string, number> = {};
+              products.forEach((p) => { counts[p.category] = (counts[p.category] || 0) + 1; });
+              return counts;
+            }, [products])}
             onAdd={handleAddCategory}
             onRename={handleRenameCategory}
             onDelete={handleDeleteCategory}
@@ -742,9 +747,10 @@ function ProductFormModal({
 // ════════════════════════════════════════════════════════════
 
 function CategoriesManager({
-  categories, onAdd, onRename, onDelete,
+  categories, productCounts, onAdd, onRename, onDelete,
 }: {
   categories: string[];
+  productCounts: Record<string, number>;
   onAdd: (name: string) => void;
   onRename: (oldName: string, newName: string) => void;
   onDelete: (name: string) => void;
@@ -826,7 +832,12 @@ function CategoriesManager({
                 </div>
               ) : (
                 <>
-                  <span className="flex-1 text-sm font-medium text-text-primary">{cat}</span>
+                  <span className="flex-1 text-sm font-medium text-text-primary flex items-center gap-2">
+                    {cat}
+                    <span className="text-[10px] text-text-tertiary bg-surface-3 px-1.5 py-0.5 rounded-full">
+                      {productCounts[cat] || 0} produtos
+                    </span>
+                  </span>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleStartRename(i)}
