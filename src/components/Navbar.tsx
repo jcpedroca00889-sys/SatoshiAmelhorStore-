@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, Search, LayoutGrid, HelpCircle, MessageCircle, Info, X, LogOut, LogIn, ArrowRight, TicketCheck } from "lucide-react";
+import { ShoppingCart, Search, LayoutGrid, HelpCircle, MessageCircle, Info, X, LogOut, LogIn, ArrowRight, TicketCheck, User } from "lucide-react";
 import { productsData } from "../data/products";
 import type { Product } from "../data/products";
 import { useCart } from "../contexts/CartContext";
@@ -108,6 +108,58 @@ export default function Navbar() {
               </a>
             );
           })}
+
+          {/* ─── Separador: Ações do Usuário ─── */}
+          <div className="pt-4 pb-1">
+            <div className="flex items-center gap-2 px-3 py-1">
+              <div className="h-px flex-1 bg-border/20" />
+              <span className="text-[9px] uppercase tracking-widest text-text-tertiary/50 font-medium">Acesso Rápido</span>
+              <div className="h-px flex-1 bg-border/20" />
+            </div>
+          </div>
+
+          {/* Carrinho */}
+          <button
+            onClick={openCartFullPage}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-secondary hover:text-orange-500 hover:bg-orange-500/5 transition-all duration-200 group"
+          >
+            <span className="w-8 h-8 rounded-lg bg-surface-2/50 group-hover:bg-orange-500/10 flex items-center justify-center shrink-0 transition-all relative">
+              <ShoppingCart size={15} className="group-hover:text-orange-500 transition-colors" />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-orange-500 rounded-full text-[7px] font-bold flex items-center justify-center text-white shadow-sm shadow-orange-500/30">
+                  {totalItems > 9 ? '9+' : totalItems}
+                </span>
+              )}
+            </span>
+            <span className="flex-1 text-left">Carrinho</span>
+            {totalItems > 0 && (
+              <span className="text-[10px] font-medium text-orange-500 bg-orange-500/10 px-1.5 py-0.5 rounded-full">{totalItems}</span>
+            )}
+          </button>
+
+          {/* Perfil / Pedidos / Suporte (só visível se logado) */}
+          {user && (
+            <>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent("open-profile"))}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-secondary hover:text-orange-500 hover:bg-orange-500/5 transition-all duration-200 group"
+              >
+                <span className="w-8 h-8 rounded-lg bg-surface-2/50 group-hover:bg-orange-500/10 flex items-center justify-center shrink-0 transition-all">
+                  <User size={15} className="group-hover:text-orange-500 transition-colors" />
+                </span>
+                Meu Perfil
+              </button>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent("open-support"))}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-secondary hover:text-orange-500 hover:bg-orange-500/5 transition-all duration-200 group"
+              >
+                <span className="w-8 h-8 rounded-lg bg-surface-2/50 group-hover:bg-orange-500/10 flex items-center justify-center shrink-0 transition-all">
+                  <TicketCheck size={15} className="group-hover:text-orange-500 transition-colors" />
+                </span>
+                Suporte / Tickets
+              </button>
+            </>
+          )}
         </nav>
         <div className="px-4 py-4 border-t border-border/20">
           {user ? (
@@ -181,7 +233,14 @@ export default function Navbar() {
                           </div>
                         </div>
                       </div>
-                      <div className="border-t border-border/20 pt-1 px-2 pb-2 space-y-0.5">
+                      <div className="pt-1 px-2 pb-2 space-y-0.5">
+                        <button
+                          onClick={() => { setUserMenuOpen(false); window.dispatchEvent(new CustomEvent("open-profile")); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-text-secondary hover:text-orange-400 hover:bg-orange-500/5 transition-colors"
+                        >
+                          <User size={14} />
+                          Meu Perfil
+                        </button>
                         <button
                           onClick={() => { setUserMenuOpen(false); window.dispatchEvent(new CustomEvent("open-support")); }}
                           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-text-secondary hover:text-orange-400 hover:bg-orange-500/5 transition-colors"
@@ -189,6 +248,7 @@ export default function Navbar() {
                           <TicketCheck size={14} />
                           Meus Tickets
                         </button>
+                        <div className="h-px bg-border/20 my-1" />
                         <button
                           onClick={() => { logout(); setUserMenuOpen(false); }}
                           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-text-secondary hover:text-red-400 hover:bg-red-500/5 transition-colors"

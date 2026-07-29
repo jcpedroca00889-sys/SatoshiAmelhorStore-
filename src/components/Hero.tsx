@@ -1,13 +1,61 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, ShoppingCart, TicketCheck, User, Package } from "lucide-react";
 import TextReveal from "./TextReveal";
+import { useCart } from "../contexts/CartContext";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Hero() {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
   const contentY = useTransform(scrollYProgress, [0, 1], [0, 40]);
+  const { totalItems, openCartFullPage } = useCart();
+  const { user } = useAuth();
+
+  const quickActions = [
+    {
+      icon: ShoppingCart,
+      label: "Meu Carrinho",
+      desc: `${totalItems} item${totalItems !== 1 ? "s" : ""}`,
+      badge: totalItems > 0 ? totalItems : undefined,
+      onClick: openCartFullPage,
+      color: "from-orange-500 to-orange-600",
+    },
+    ...(user
+      ? [
+          {
+            icon: User,
+            label: "Meu Perfil",
+            desc: "Ver pedidos e dados",
+            onClick: () => window.dispatchEvent(new CustomEvent("open-profile")),
+            color: "from-blue-500 to-blue-600",
+          },
+          {
+            icon: TicketCheck,
+            label: "Suporte",
+            desc: "Abrir ticket ou chat",
+            onClick: () => window.dispatchEvent(new CustomEvent("open-support")),
+            color: "from-purple-500 to-purple-600",
+          },
+        ]
+      : [
+          {
+            icon: User,
+            label: "Entrar / Cadastrar",
+            desc: "Acesse sua conta",
+            onClick: () => window.dispatchEvent(new CustomEvent("open-auth")),
+            color: "from-blue-500 to-blue-600",
+          },
+        ]),
+    {
+      icon: Package,
+      label: "Produtos",
+      desc: "Navegar catálogo",
+      onClick: () => document.querySelector("#todos-produtos")?.scrollIntoView({ behavior: "smooth" }),
+      color: "from-green-500 to-green-600",
+    },
+  ];
 
   return (
     <section
@@ -98,6 +146,38 @@ export default function Hero() {
           >
             Como Funciona
           </motion.a>
+        </motion.div>
+
+        {/* Quick Access Cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 1.0 }}
+          className="mt-10 sm:mt-14 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto"
+        >
+          {quickActions.map((action, i) => (
+            <motion.button
+              key={action.label}
+              onClick={action.onClick}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.1 + i * 0.08 }}
+              whileHover={{ scale: 1.04, y: -3 }}
+              whileTap={{ scale: 0.97 }}
+              className="relative flex flex-col items-center gap-2 px-3 py-4 sm:py-5 rounded-2xl bg-surface-2/40 border border-border/30 hover:border-orange-500/40 transition-all group"
+            >
+              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-lg shadow-orange-500/10`}>
+                <action.icon size={18} className="text-white" />
+                {action.badge !== undefined && action.badge > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full text-[7px] font-bold flex items-center justify-center text-white shadow-sm shadow-orange-500/30">
+                    {action.badge > 9 ? "9+" : action.badge}
+                  </span>
+                )}
+              </div>
+              <span className="text-xs font-semibold text-text-primary">{action.label}</span>
+              <span className="text-[9px] text-text-tertiary -mt-1">{action.desc}</span>
+            </motion.button>
+          ))}
         </motion.div>
       </motion.div>
 
