@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Plus, Pencil, Trash2, X, Download, Upload,
   ChevronLeft, ChevronRight, LogOut,
-  Save, AlertCircle, CheckCircle2, Search,
+  Save, AlertCircle, CheckCircle2, Search, Tags,
 } from "lucide-react";
 import { productsData, type Product } from "../data/products";
 
-// ─── Storage key ───
+// ─── Storage keys ───
 const STORAGE_KEY = "satoshi_store_products";
+const CATEGORIES_KEY = "satoshi_store_categories";
 const AUTH_KEY = "satoshi_admin_auth";
 
 // ─── Default empty product ───
@@ -48,6 +49,25 @@ function saveProducts(products: Product[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
 }
 
+// ─── Category helpers ───
+const DEFAULT_CATEGORIES = [
+  "Áudio", "Câmeras", "Smartphones", "Smartwatches",
+  "Games", "Acessórios", "Casa Inteligente", "Outros",
+];
+
+function loadCategories(): string[] {
+  try {
+    const raw = localStorage.getItem(CATEGORIES_KEY);
+    if (raw) return JSON.parse(raw) as string[];
+  } catch { /* ignore */ }
+  saveCategories(DEFAULT_CATEGORIES);
+  return [...DEFAULT_CATEGORIES];
+}
+
+function saveCategories(categories: string[]) {
+  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+}
+
 function generateId(name: string): string {
   return name
     .toLowerCase()
@@ -55,11 +75,6 @@ function generateId(name: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "") + "-" + Date.now().toString(36);
 }
-
-const categories = [
-  "Áudio", "Câmeras", "Smartphones", "Smartwatches",
-  "Games", "Acessórios", "Casa Inteligente", "Outros",
-];
 
 // ════════════════════════════════════════════════════════════
 //  ADMIN PAGE
@@ -145,10 +160,13 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [saved, setSaved] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<"products" | "categories">("products");
   const PER_PAGE = 10;
 
   useEffect(() => {
     setProducts(loadProducts());
+    setCategories(loadCategories());
   }, []);
 
   const filtered = useMemo(() => {
@@ -229,6 +247,50 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
     window.location.reload();
   };
 
+  // ─── Category handlers ───
+  const handleAddCategory = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed || categories.includes(trimmed)) return;
+    const updated = [...categories, trimmed];
+    saveCategories(updated);
+    setCategories(updated);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleRenameCategory = (oldName: string, newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === oldName) return;
+    const updated = categories.map((c) => (c === oldName ? trimmed : c));
+    saveCategories(updated);
+    setCategories(updated);
+    // Rename category in products too
+    const updatedProducts = products.map((p) =>
+      p.category === oldName ? { ...p, category: trimmed } : p
+    );
+    saveProducts(updatedProducts);
+    setProducts(updatedProducts);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleDeleteCategory = (name: string) => {
+    const inUse = products.filter((p) => p.category === name);
+    if (inUse.length > 0) {
+      if (!confirm(`"${name}" está em uso por ${inUse.length} produto(s). Deseja mover esses produtos para "Outros" e excluir a categoria?`)) return;
+      const updatedProducts = products.map((p) =>
+        p.category === name ? { ...p, category: "Outros" } : p
+      );
+      saveProducts(updatedProducts);
+      setProducts(updatedProducts);
+    }
+    const updated = categories.filter((c) => c !== name);
+    saveCategories(updated);
+    setCategories(updated);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
   return (
     <div className="min-h-screen bg-surface">
       {/* Top Bar */}
@@ -239,9 +301,29 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
               <Package size={16} className="text-white" />
             </div>
             <span className="text-sm font-semibold text-text-primary">Admin</span>
-            <span className="text-[10px] text-text-tertiary bg-surface-3 px-2 py-0.5 rounded-full">
-              {products.length} produtos
-            </span>
+          </div>
+          {/* Tabs */}
+          <div className="flex items-center gap-1 bg-surface-3/50 rounded-xl p-0.5 border border-border/20">
+            <button
+              onClick={() => setActiveTab("products")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === "products"
+                  ? "glass-card-3d text-orange-500"
+                  : "text-text-tertiary hover:text-text-secondary"
+              }`}
+            >
+              Produtos ({products.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("categories")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === "categories"
+                  ? "glass-card-3d text-orange-500"
+                  : "text-text-tertiary hover:text-text-secondary"
+              }`}
+            >
+              Categorias ({categories.length})
+            </button>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={handleImport} className="p-2 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-orange-500" title="Importar JSON">
@@ -273,107 +355,119 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
           )}
         </AnimatePresence>
 
-        {/* Search + Add */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex-1 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border/30 bg-surface-2/30 focus-within:border-orange-500/50 transition-all">
-            <Search size={16} className="text-text-tertiary shrink-0" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-              placeholder="Buscar produtos..."
-              className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-tertiary/60 focus:outline-none"
-            />
-          </div>
-          <button
-            onClick={() => { setEditing(emptyProduct()); setIsNew(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card-3d card-shine text-white font-medium text-sm"
-          >
-            <Plus size={16} />
-            Novo
-          </button>
-        </div>
-
-        {/* Product List */}
-        {paginated.length === 0 ? (
-          <div className="flex flex-col items-center gap-4 py-20 text-center">
-            <Package size={40} className="text-text-tertiary/30" />
-            <p className="text-sm text-text-tertiary">Nenhum produto encontrado</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <div className="hidden sm:grid grid-cols-12 gap-3 px-4 py-2 text-[10px] text-text-tertiary uppercase tracking-wider font-medium">
-              <div className="col-span-4">Produto</div>
-              <div className="col-span-2">Categoria</div>
-              <div className="col-span-2">Preço</div>
-              <div className="col-span-2">Avaliação</div>
-              <div className="col-span-2 text-right">Ações</div>
-            </div>
-            {paginated.map((product) => (
-              <div key={product.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center px-4 py-3 rounded-xl glass-card-3d card-shine border border-border/20 hover:border-orange-500/20 transition-all">
-                <div className="col-span-4 flex items-center gap-3">
-                  <span className="text-xl shrink-0">{product.image}</span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-text-primary truncate">{product.name}</p>
-                    <p className="text-[10px] text-text-tertiary font-mono truncate">{product.id}</p>
-                  </div>
-                </div>
-                <div className="col-span-2">
-                  <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-orange-500/10 text-orange-500">
-                    {product.category}
-                  </span>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-sm font-semibold text-orange-500">{product.price}</span>
-                </div>
-                <div className="col-span-2">
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-yellow-500">{product.rating}.0</span>
-                    <span className="text-[10px] text-text-tertiary">({product.reviewCount})</span>
-                  </div>
-                </div>
-                <div className="col-span-2 flex items-center justify-end gap-1">
-                  <button
-                    onClick={() => { setEditing({ ...product }); setIsNew(false); }}
-                    className="p-2 rounded-lg glass-card-3d card-shine text-text-secondary hover:text-orange-500"
-                    title="Editar"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(product.id)}
-                    className="p-2 rounded-lg glass-card-3d card-shine text-text-secondary hover:text-red-400"
-                    title="Excluir"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+        {/* Products Tab */}
+        {activeTab === "products" && (
+          <>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex-1 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border/30 bg-surface-2/30 focus-within:border-orange-500/50 transition-all">
+                <Search size={16} className="text-text-tertiary shrink-0" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+                  placeholder="Buscar produtos..."
+                  className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-tertiary/60 focus:outline-none"
+                />
               </div>
-            ))}
-          </div>
+              <button
+                onClick={() => { setEditing(emptyProduct()); setIsNew(true); }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card-3d card-shine text-white font-medium text-sm"
+              >
+                <Plus size={16} />
+                Novo
+              </button>
+            </div>
+
+            {paginated.length === 0 ? (
+              <div className="flex flex-col items-center gap-4 py-20 text-center">
+                <Package size={40} className="text-text-tertiary/30" />
+                <p className="text-sm text-text-tertiary">Nenhum produto encontrado</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="hidden sm:grid grid-cols-12 gap-3 px-4 py-2 text-[10px] text-text-tertiary uppercase tracking-wider font-medium">
+                  <div className="col-span-4">Produto</div>
+                  <div className="col-span-2">Categoria</div>
+                  <div className="col-span-2">Preço</div>
+                  <div className="col-span-2">Avaliação</div>
+                  <div className="col-span-2 text-right">Ações</div>
+                </div>
+                {paginated.map((product) => (
+                  <div key={product.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center px-4 py-3 rounded-xl glass-card-3d card-shine border border-border/20 hover:border-orange-500/20 transition-all">
+                    <div className="col-span-4 flex items-center gap-3">
+                      <span className="text-xl shrink-0">{product.image}</span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-text-primary truncate">{product.name}</p>
+                        <p className="text-[10px] text-text-tertiary font-mono truncate">{product.id}</p>
+                      </div>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-orange-500/10 text-orange-500">
+                        {product.category}
+                      </span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-sm font-semibold text-orange-500">{product.price}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-yellow-500">{product.rating}.0</span>
+                        <span className="text-[10px] text-text-tertiary">({product.reviewCount})</span>
+                      </div>
+                    </div>
+                    <div className="col-span-2 flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => { setEditing({ ...product }); setIsNew(false); }}
+                        className="p-2 rounded-lg glass-card-3d card-shine text-text-secondary hover:text-orange-500"
+                        title="Editar"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product.id)}
+                        className="p-2 rounded-lg glass-card-3d card-shine text-text-secondary hover:text-red-400"
+                        title="Excluir"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-3 mt-6">
+                <button
+                  onClick={() => setPage(Math.max(0, page - 1))}
+                  disabled={page === 0}
+                  className="p-2 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-orange-500 disabled:opacity-30"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="text-xs text-text-tertiary">
+                  {page + 1} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                  disabled={page >= totalPages - 1}
+                  className="p-2 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-orange-500 disabled:opacity-30"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
+          </>
         )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-3 mt-6">
-            <button
-              onClick={() => setPage(Math.max(0, page - 1))}
-              disabled={page === 0}
-              className="p-2 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-orange-500 disabled:opacity-30"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span className="text-xs text-text-tertiary">
-              {page + 1} / {totalPages}
-            </span>
-            <button
-              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-              disabled={page >= totalPages - 1}
-              className="p-2 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-orange-500 disabled:opacity-30"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
+        {/* Categories Tab */}
+        {activeTab === "categories" && (
+          <CategoriesManager
+            categories={categories}
+            onAdd={handleAddCategory}
+            onRename={handleRenameCategory}
+            onDelete={handleDeleteCategory}
+          />
         )}
       </div>
 
@@ -383,6 +477,7 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
           <ProductFormModal
             product={editing}
             isNew={isNew}
+            categories={categories}
             onSave={handleSave}
             onClose={() => { setEditing(null); setIsNew(false); }}
           />
@@ -397,10 +492,11 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
 // ════════════════════════════════════════════════════════════
 
 function ProductFormModal({
-  product, isNew, onSave, onClose,
+  product, isNew, categories, onSave, onClose,
 }: {
   product: Product;
   isNew: boolean;
+  categories: string[];
   onSave: (p: Product) => void;
   onClose: () => void;
 }) {
@@ -500,6 +596,7 @@ function ProductFormModal({
                 <label className="text-xs font-medium text-text-secondary mb-1 block">Categoria</label>
                 <select value={form.category} onChange={(e) => update("category", e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-border/30 bg-surface-2/30 text-sm text-text-primary focus:border-orange-500/50 focus:outline-none transition-all">
+                  {categories.length === 0 && <option value="">Sem categorias</option>}
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
@@ -606,6 +703,122 @@ function ProductFormModal({
         </motion.div>
       </div>
     </motion.div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+//  CATEGORIES MANAGER
+// ════════════════════════════════════════════════════════════
+
+function CategoriesManager({
+  categories, onAdd, onRename, onDelete,
+}: {
+  categories: string[];
+  onAdd: (name: string) => void;
+  onRename: (oldName: string, newName: string) => void;
+  onDelete: (name: string) => void;
+}) {
+  const [newName, setNewName] = useState("");
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
+
+  const handleAdd = () => {
+    onAdd(newName);
+    setNewName("");
+  };
+
+  const handleStartRename = (index: number) => {
+    setEditingIndex(index);
+    setEditValue(categories[index]);
+  };
+
+  const handleConfirmRename = () => {
+    if (editingIndex === null) return;
+    onRename(categories[editingIndex], editValue);
+    setEditingIndex(null);
+    setEditValue("");
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-3 mb-6">
+        <div className="flex-1 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border/30 bg-surface-2/30 focus-within:border-orange-500/50 transition-all">
+          <Tags size={16} className="text-text-tertiary shrink-0" />
+          <input
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+            placeholder="Nova categoria..."
+            className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-tertiary/60 focus:outline-none"
+          />
+        </div>
+        <button
+          onClick={handleAdd}
+          disabled={!newName.trim()}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card-3d card-shine text-white font-medium text-sm disabled:opacity-40"
+        >
+          <Plus size={16} />
+          Adicionar
+        </button>
+      </div>
+
+      {categories.length === 0 ? (
+        <div className="flex flex-col items-center gap-4 py-20 text-center">
+          <Tags size={40} className="text-text-tertiary/30" />
+          <p className="text-sm text-text-tertiary">Nenhuma categoria</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {categories.map((cat, i) => (
+            <div key={cat} className="flex items-center gap-3 px-4 py-3 rounded-xl glass-card-3d card-shine border border-border/20 hover:border-orange-500/20 transition-all">
+              <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+                <Tags size={14} className="text-orange-500" />
+              </div>
+
+              {editingIndex === i ? (
+                <div className="flex-1 flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleConfirmRename(); if (e.key === "Escape") setEditingIndex(null); }}
+                    className="flex-1 px-3 py-1.5 rounded-lg border border-border/30 bg-surface-2/30 text-sm text-text-primary focus:border-orange-500/50 focus:outline-none transition-all"
+                    autoFocus
+                  />
+                  <button onClick={handleConfirmRename} className="p-1.5 rounded-lg glass-card-3d card-shine text-green-500 hover:text-green-400">
+                    <CheckCircle2 size={14} />
+                  </button>
+                  <button onClick={() => setEditingIndex(null)} className="p-1.5 rounded-lg glass-card-3d card-shine text-text-tertiary hover:text-text-primary">
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <span className="flex-1 text-sm font-medium text-text-primary">{cat}</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleStartRename(i)}
+                      className="p-2 rounded-lg glass-card-3d card-shine text-text-secondary hover:text-orange-500"
+                      title="Renomear"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => onDelete(cat)}
+                      className="p-2 rounded-lg glass-card-3d card-shine text-text-secondary hover:text-red-400"
+                      title="Excluir"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
