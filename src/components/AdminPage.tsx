@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Plus, Pencil, Trash2, X, Download, Upload,
-  ChevronLeft, ChevronRight, LogOut, Eye, EyeOff,
+  ChevronLeft, ChevronRight, LogOut,
   Save, AlertCircle, CheckCircle2, Search,
 } from "lucide-react";
 import { productsData, type Product } from "../data/products";
