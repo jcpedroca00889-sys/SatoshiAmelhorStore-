@@ -578,6 +578,21 @@ function ProductFormModal({
   onClose: () => void;
 }) {
   const [form, setForm] = useState<Product>({ ...product });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!form.name.trim()) errs.name = "Nome é obrigatório";
+    if (!form.category) errs.category = "Categoria é obrigatória";
+    if (!form.price.trim()) errs.price = "Preço é obrigatório";
+    else if (form.priceNumber <= 0) errs.priceNumber = "Preço deve ser maior que zero";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSave = () => {
+    if (validate()) onSave(form);
+  };
 
   const update = <K extends keyof Product>(key: K, value: Product[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -684,13 +699,16 @@ function ProductFormModal({
               </div>
               <div>
                 <label className="text-xs font-medium text-text-secondary mb-1 block">Categoria</label>
-                <select value={form.category} onChange={(e) => update("category", e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-border/30 bg-surface-2/30 text-sm text-text-primary focus:border-orange-500/50 focus:outline-none transition-all">
+                <select value={form.category} onChange={(e) => { update("category", e.target.value); setErrors((prev) => ({ ...prev, category: "" })); }}
+                  className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none transition-all"
+                  style={{ borderColor: errors.category ? "rgba(239,68,68,0.5)" : undefined }}
+                >
                   {categories.length === 0 && <option value="">Sem categorias</option>}
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
+                {errors.category && <p className="text-red-400 text-[10px] mt-1">{errors.category}</p>}
               </div>
             </div>
 
@@ -698,8 +716,10 @@ function ProductFormModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-medium text-text-secondary mb-1 block">Nome</label>
-                <input type="text" value={form.name} onChange={(e) => update("name", e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-border/30 bg-surface-2/30 text-sm text-text-primary focus:border-orange-500/50 focus:outline-none transition-all" />
+                <input type="text" value={form.name} onChange={(e) => { update("name", e.target.value); setErrors((prev) => ({ ...prev, name: "" })); }}
+                  className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none transition-all"
+                  style={{ borderColor: errors.name ? "rgba(239,68,68,0.5)" : undefined }} />
+                {errors.name && <p className="text-red-400 text-[10px] mt-1">{errors.name}</p>}
               </div>
               <div>
                 <label className="text-xs font-medium text-text-secondary mb-1 block">ID (automático)</label>
@@ -712,13 +732,17 @@ function ProductFormModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-medium text-text-secondary mb-1 block">Preço (R$)</label>
-                <input type="text" value={form.price} onChange={(e) => update("price", e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-border/30 bg-surface-2/30 text-sm text-text-primary focus:border-orange-500/50 focus:outline-none transition-all" />
+                <input type="text" value={form.price} onChange={(e) => { update("price", e.target.value); setErrors((prev) => ({ ...prev, price: "" })); }}
+                  className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none transition-all"
+                  style={{ borderColor: errors.price ? "rgba(239,68,68,0.5)" : undefined }} />
+                {errors.price && <p className="text-red-400 text-[10px] mt-1">{errors.price}</p>}
               </div>
               <div>
                 <label className="text-xs font-medium text-text-secondary mb-1 block">Preço (número)</label>
                 <input type="number" value={form.priceNumber} onChange={(e) => handlePriceNumber(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl border border-border/30 bg-surface-2/30 text-sm text-text-primary focus:border-orange-500/50 focus:outline-none transition-all" />
+                  className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none transition-all"
+                  style={{ borderColor: errors.priceNumber ? "rgba(239,68,68,0.5)" : undefined }} />
+                {errors.priceNumber && <p className="text-red-400 text-[10px] mt-1">{errors.priceNumber}</p>}
               </div>
             </div>
 
@@ -783,7 +807,7 @@ function ProductFormModal({
               Cancelar
             </button>
             <button
-              onClick={() => onSave(form)}
+              onClick={handleSave}
               className="flex items-center gap-2 px-5 py-2 rounded-xl glass-card-3d card-shine text-white font-medium text-sm"
             >
               <Save size={15} />
