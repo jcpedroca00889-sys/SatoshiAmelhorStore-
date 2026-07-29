@@ -14,6 +14,7 @@ import CartPage from "./components/CartPage";
 import CartPageFull from "./components/CartPageFull";
 import AuthPage from "./components/AuthPage";
 import CheckoutPage from "./components/CheckoutPage";
+import AdminPage from "./components/AdminPage";
 import { CartProvider, useCart } from "./contexts/CartContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { productsData } from "./data/products";
@@ -137,11 +138,28 @@ function AppContent({ handleProductSelect, handleCloseDetail, selectedProduct }:
   const { isCartFullPage, isCheckoutOpen } = useCart();
   const { isAuthPageOpen } = useAuth();
 
+  // Detect /admin path
+  const isAdmin = window.location.pathname === "/admin";
+
+  const handleAdminLogout = () => {
+    window.history.replaceState(null, "", "/");
+    window.location.reload();
+  };
+
   // Lock body scroll when modal/page is open
   useEffect(() => {
     document.body.style.overflow = isCartFullPage || selectedProduct || isAuthPageOpen || isCheckoutOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [isCartFullPage, selectedProduct, isAuthPageOpen, isCheckoutOpen]);
+
+  // Admin mode: render only AdminPage
+  if (isAdmin) {
+    return (
+      <div className="relative min-h-screen bg-surface text-text-primary font-sans overflow-x-hidden">
+        <AdminPage onLogout={handleAdminLogout} />
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-surface text-text-primary font-sans overflow-x-hidden">
