@@ -1,8 +1,10 @@
 import { memo, useRef, useCallback, useState } from "react";
 import { motion } from "framer-motion";
-import { ShoppingBag, Star, Check } from "lucide-react";
+import { ShoppingBag, Star, Check, Bell } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
+import { useAuth } from "../contexts/AuthContext";
 import { productsData } from "../data/products";
+import { subscribeToStock, isUserSubscribed, unsubscribeFromStock } from "../data/stockNotifications";
 
 interface ProductCardProps {
   name: string;
@@ -18,18 +20,40 @@ interface ProductCardProps {
 function ProductCardComponent({ name, category, price, rating, image, color, index, onSelect }: ProductCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const { addItem } = useCart();
+  const { user, openAuthPage } = useAuth();
   const [justAdded, setJustAdded] = useState(false);
+  const [notifSent, setNotifSent] = useState(false);
+
+  const fullProduct = productsData.find(p => p.name === name);
+  const isOutOfStock = fullProduct?.inStock === false;
 
   const handleAddToCart = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    // Use the name to find the full product from data
-    const fullProduct = productsData.find(p => p.name === name);
-    if (fullProduct) {
-      addItem(fullProduct);
+    const fp = productsData.find(p => p.name === name);
+    if (fp && fp.inStock !== false) {
+      addItem(fp);
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 1200);
     }
-    setJustAdded(true);
-    setTimeout(() => setJustAdded(false), 1200);
   }, [addItem, name]);
+
+  const handleNotifyMe = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) { openAuthPage(); return; }
+    if (!fullProduct) return;
+    if (isUserSubscribed(user.id, fullProduct.id)) {
+      const subs = JSON.parse(localStorage.getItem("satoshi_stock_notifications") || "[]");
+      const sub = subs.find((s: any) => s.userId === user.id && s.productId === fullProduct.id && s.notifiedAt === null);
+      if (sub) unsubscribeFromStock(sub.id);
+      setNotifSent(false);
+      return;
+    }
+    const result = subscribeToStock(user.id, user.email || "", fullProduct.id);
+    if (result) {
+      setNotifSent(true);
+      setTimeout(() => setNotifSent(false), 2000);
+    }
+  }, [user, openAuthPage, fullProduct]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const rect = cardRef.current?.getBoundingClientRect();
@@ -116,68 +140,98 @@ function ProductCardComponent({ name, category, price, rating, image, color, ind
               <span className="text-[10px] sm:text-xs text-text-tertiary">({rating}.0)</span>
             </div>
 
-            {/* Add to Cart Button with Animation */}
-            <motion.button
-              onClick={handleAddToCart}
-              className={`relative w-full flex items-center justify-center gap-1.5 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-sm font-medium transition-all touch-target overflow-hidden ${
-                justAdded
-                  ? "bg-green-500/15 text-green-400 border border-green-500/30"
-                  : "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 border border-orange-500/20 hover:border-orange-500/40"
-              }`}
-              whileHover={justAdded ? {} : { scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
-              disabled={justAdded}
-            >
-              {/* Sparkle particles */}
-              {justAdded && (
-                <>
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <span
-                      key={i}
-                      className="sparkle"
-                      style={{
-                        left: `${20 + Math.random() * 60}%`,
-                        top: `${10 + Math.random() * 80}%`,
-                        backgroundColor: ["#f97316", "#fb923c", "#22c55e", "#eab308", "#a855f7", "#3b82f6"][i],
-                        animationDelay: `${i * 0.08}s`,
-                        width: `${4 + Math.random() * 4}px`,
-                        height: `${4 + Math.random() * 4}px`,
-                      }}
-                    />
-                  ))}
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <span
-                      key={`confetti-${i}`}
-                      className="confetti-piece"
-                      style={{
-                        left: `${30 + Math.random() * 40}%`,
-                        top: `${40 + Math.random() * 20}%`,
-                        backgroundColor: ["#f97316", "#fb923c", "#22c55e", "#eab308"][i],
-                        animationDelay: `${i * 0.1}s`,
-                        width: `${4 + Math.random() * 3}px`,
-                        height: `${4 + Math.random() * 3}px`,
-                      }}
-                    />
-                  ))}
-                </>
-              )}
-              {justAdded ? (
-                <motion.span
-                  key="check"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="flex items-center gap-1.5"
-                >
-                  <Check size={14} className="btn-check" />
-                  Adicionado!
-                </motion.span>
-              ) : (
-                <>
-                  <ShoppingBag size={13} className="sm:size-[15px]" />
-                  Adicionar ao carrinho
-                </>
-              )}
-            </motion.button>
+            {/* Add to Cart / Notify Button */}
+            {isOutOfStock ? (
+              <motion.button
+                onClick={handleNotifyMe}
+                className={`relative w-full flex items-center justify-center gap-1.5 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-sm font-medium transition-all touch-target overflow-hidden ${
+                  notifSent
+                    ? "bg-green-500/15 text-green-400 border border-green-500/30"
+                    : "bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 hover:border-yellow-500/40"
+                }`}
+                whileHover={notifSent ? {} : { scale: 1.03, y: -1 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                {notifSent ? (
+                  <motion.span
+                    key="check-notif"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="flex items-center gap-1.5"
+                  >
+                    <Check size={14} />
+                    Assinado!
+                  </motion.span>
+                ) : (
+                  <>
+                    <Bell size={13} className="sm:size-[15px]" />
+                    {user && isUserSubscribed(user.id, fullProduct!.id) ? "Inscrito" : "Avise-me"}
+                  </>
+                )}
+              </motion.button>
+            ) : (
+              <motion.button
+                onClick={handleAddToCart}
+                className={`relative w-full flex items-center justify-center gap-1.5 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-sm font-medium transition-all touch-target overflow-hidden ${
+                  justAdded
+                    ? "bg-green-500/15 text-green-400 border border-green-500/30"
+                    : "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 border border-orange-500/20 hover:border-orange-500/40"
+                }`}
+                whileHover={justAdded ? {} : { scale: 1.03, y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                disabled={justAdded}
+              >
+                {/* Sparkle particles */}
+                {justAdded && (
+                  <>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <span
+                        key={i}
+                        className="sparkle"
+                        style={{
+                          left: `${20 + Math.random() * 60}%`,
+                          top: `${10 + Math.random() * 80}%`,
+                          backgroundColor: ["#f97316", "#fb923c", "#22c55e", "#eab308", "#a855f7", "#3b82f6"][i],
+                          animationDelay: `${i * 0.08}s`,
+                          width: `${4 + Math.random() * 4}px`,
+                          height: `${4 + Math.random() * 4}px`,
+                        }}
+                      />
+                    ))}
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <span
+                        key={`confetti-${i}`}
+                        className="confetti-piece"
+                        style={{
+                          left: `${30 + Math.random() * 40}%`,
+                          top: `${40 + Math.random() * 20}%`,
+                          backgroundColor: ["#f97316", "#fb923c", "#22c55e", "#eab308"][i],
+                          animationDelay: `${i * 0.1}s`,
+                          width: `${4 + Math.random() * 3}px`,
+                          height: `${4 + Math.random() * 3}px`,
+                        }}
+                      />
+                    ))}
+                  </>
+                )}
+                {justAdded ? (
+                  <motion.span
+                    key="check"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="flex items-center gap-1.5"
+                  >
+                    <Check size={14} className="btn-check" />
+                    Adicionado!
+                  </motion.span>
+                ) : (
+                  <>
+                    <ShoppingBag size={13} className="sm:size-[15px]" />
+                    Adicionar ao carrinho
+                  </>
+                )}
+              </motion.button>
+            )}
           </div>
         </motion.div>
       </motion.div>

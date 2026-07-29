@@ -1,9 +1,11 @@
 import { memo, useState, useCallback, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, ChevronLeft, ChevronRight, ShoppingBag, Star, ArrowUpDown, ArrowUp, ArrowDown, Check, RotateCcw, DollarSign } from "lucide-react";
+import { Sparkles, ChevronLeft, ChevronRight, ShoppingBag, Star, ArrowUpDown, ArrowUp, ArrowDown, Check, RotateCcw, DollarSign, Bell } from "lucide-react";
 import { productsData } from "../data/products";
 import { useDragScroll } from "../hooks/useDragScroll";
 import { useCart } from "../contexts/CartContext";
+import { useAuth } from "../contexts/AuthContext";
+import { subscribeToStock, isUserSubscribed, unsubscribeFromStock } from "../data/stockNotifications";
 
 interface ProductCardHorizProps {
   product: typeof productsData[0];
@@ -14,14 +16,33 @@ interface ProductCardHorizProps {
 
 function ProductCardHorizComponent({ product, index, onProductId, onSelectProduct }: ProductCardHorizProps) {
   const { addItem } = useCart();
+  const { user, openAuthPage } = useAuth();
   const [justAdded, setJustAdded] = useState(false);
+  const [notifSent, setNotifSent] = useState(false);
+
+  const isOutOfStock = product.inStock === false;
 
   const handleAddToCart = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    if (product.inStock === false) return;
     addItem(product);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
   }, [addItem, product]);
+
+  const handleNotifyMe = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) { openAuthPage(); return; }
+    if (isUserSubscribed(user.id, product.id)) {
+      const subs = JSON.parse(localStorage.getItem("satoshi_stock_notifications") || "[]");
+      const sub = subs.find((s: any) => s.userId === user.id && s.productId === product.id && s.notifiedAt === null);
+      if (sub) unsubscribeFromStock(sub.id);
+      setNotifSent(false);
+      return;
+    }
+    const result = subscribeToStock(user.id, user.email || "", product.id);
+    if (result) { setNotifSent(true); setTimeout(() => setNotifSent(false), 2000); }
+  }, [user, openAuthPage, product]);
 
   return (
     <motion.div
@@ -81,52 +102,58 @@ function ProductCardHorizComponent({ product, index, onProductId, onSelectProduc
             ))}
           </div>
 
-          {/* Add to Cart Button with Animation */}
-          <motion.button
-            onClick={handleAddToCart}
-            className={`relative w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[10px] font-medium transition-all overflow-hidden ${
-              justAdded
-                ? "bg-green-500/15 text-green-400 border border-green-500/30"
-                : "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 border border-orange-500/20"
-            }`}
-            whileHover={justAdded ? {} : { scale: 1.04, y: -1 }}
-            whileTap={{ scale: 0.95 }}
-            disabled={justAdded}
-          >
-            {justAdded && (
-              <>
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <span
-                    key={i}
-                    className="sparkle"
-                    style={{
-                      left: `${20 + Math.random() * 60}%`,
-                      top: `${10 + Math.random() * 80}%`,
+          {/* Add to Cart / Notify Button */}
+          {isOutOfStock ? (
+            <motion.button
+              onClick={handleNotifyMe}
+              className={`relative w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[10px] font-medium transition-all overflow-hidden ${
+                notifSent
+                  ? "bg-green-500/15 text-green-400 border border-green-500/30"
+                  : "bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20"
+              }`}
+              whileHover={notifSent ? {} : { scale: 1.04, y: -1 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {notifSent ? (
+                <motion.span key="check-notif-h" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-1">
+                  <Check size={11} /> Assinado!
+                </motion.span>
+              ) : (
+                <><Bell size={10} /> {user && isUserSubscribed(user.id, product.id) ? "Inscrito" : "Avise-me"}</>
+              )}
+            </motion.button>
+          ) : (
+            <motion.button
+              onClick={handleAddToCart}
+              className={`relative w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[10px] font-medium transition-all overflow-hidden ${
+                justAdded
+                  ? "bg-green-500/15 text-green-400 border border-green-500/30"
+                  : "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 border border-orange-500/20"
+              }`}
+              whileHover={justAdded ? {} : { scale: 1.04, y: -1 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={justAdded}
+            >
+              {justAdded && (
+                <>
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <span key={i} className="sparkle" style={{
+                      left: `${20 + Math.random() * 60}%`, top: `${10 + Math.random() * 80}%`,
                       backgroundColor: ["#f97316", "#22c55e", "#eab308", "#a855f7"][i],
-                      animationDelay: `${i * 0.08}s`,
-                      width: `${3 + Math.random() * 3}px`,
-                      height: `${3 + Math.random() * 3}px`,
-                    }}
-                  />
-                ))}
-              </>
-            )}
-            {justAdded ? (
-              <motion.span
-                key="check"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="flex items-center gap-1"
-              >
-                <Check size={11} className="btn-check" />
-                Adicionado!
-              </motion.span>
-            ) : (
-              <>
-                <ShoppingBag size={11} /> Adicionar
-              </>
-            )}
-          </motion.button>
+                      animationDelay: `${i * 0.08}s`, width: `${3 + Math.random() * 3}px`, height: `${3 + Math.random() * 3}px`,
+                    }} />
+                  ))}
+                </>
+              )}
+              {justAdded ? (
+                <motion.span key="check-h" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-1">
+                  <Check size={11} className="btn-check" /> Adicionado!
+                </motion.span>
+              ) : (
+                <><ShoppingBag size={11} /> Adicionar</>
+              )}
+            </motion.button>
+          )}
         </div>
       </motion.div>
     </motion.div>
@@ -142,14 +169,33 @@ interface ProductCardGridProps {
 
 function ProductCardGridComponent({ product, index, onSelectProduct }: ProductCardGridProps) {
   const { addItem } = useCart();
+  const { user, openAuthPage } = useAuth();
   const [justAdded, setJustAdded] = useState(false);
+  const [notifSent, setNotifSent] = useState(false);
+
+  const isOutOfStock = product.inStock === false;
 
   const handleAddToCart = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    if (product.inStock === false) return;
     addItem(product);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
   }, [addItem, product]);
+
+  const handleNotifyMe = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) { openAuthPage(); return; }
+    if (isUserSubscribed(user.id, product.id)) {
+      const subs = JSON.parse(localStorage.getItem("satoshi_stock_notifications") || "[]");
+      const sub = subs.find((s: any) => s.userId === user.id && s.productId === product.id && s.notifiedAt === null);
+      if (sub) unsubscribeFromStock(sub.id);
+      setNotifSent(false);
+      return;
+    }
+    const result = subscribeToStock(user.id, user.email || "", product.id);
+    if (result) { setNotifSent(true); setTimeout(() => setNotifSent(false), 2000); }
+  }, [user, openAuthPage, product]);
 
   return (
     <motion.div
@@ -207,64 +253,65 @@ function ProductCardGridComponent({ product, index, onSelectProduct }: ProductCa
             <span className="text-[10px] text-text-tertiary ml-1">({product.reviewCount})</span>
           </div>
 
-          {/* Add to Cart Button with Animation */}
-          <motion.button
-            onClick={handleAddToCart}
-            className={`relative w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium transition-all overflow-hidden ${
-              justAdded
-                ? "bg-green-500/15 text-green-400 border border-green-500/30"
-                : "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 border border-orange-500/20"
-            }`}
-            whileHover={justAdded ? {} : { scale: 1.03, y: -1 }}
-            whileTap={{ scale: 0.95 }}
-            disabled={justAdded}
-          >
-            {justAdded && (
-              <>
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <span
-                    key={i}
-                    className="sparkle"
-                    style={{
-                      left: `${20 + Math.random() * 60}%`,
-                      top: `${10 + Math.random() * 80}%`,
+          {/* Add to Cart / Notify Button */}
+          {isOutOfStock ? (
+            <motion.button
+              onClick={handleNotifyMe}
+              className={`relative w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium transition-all overflow-hidden ${
+                notifSent
+                  ? "bg-green-500/15 text-green-400 border border-green-500/30"
+                  : "bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20"
+              }`}
+              whileHover={notifSent ? {} : { scale: 1.03, y: -1 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {notifSent ? (
+                <motion.span key="check-notif-g" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-1.5">
+                  <Check size={13} /> Assinado!
+                </motion.span>
+              ) : (
+                <><Bell size={12} /> {user && isUserSubscribed(user.id, product.id) ? "Inscrito" : "Avise-me"}</>
+              )}
+            </motion.button>
+          ) : (
+            <motion.button
+              onClick={handleAddToCart}
+              className={`relative w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium transition-all overflow-hidden ${
+                justAdded
+                  ? "bg-green-500/15 text-green-400 border border-green-500/30"
+                  : "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 border border-orange-500/20"
+              }`}
+              whileHover={justAdded ? {} : { scale: 1.03, y: -1 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={justAdded}
+            >
+              {justAdded && (
+                <>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <span key={i} className="sparkle" style={{
+                      left: `${20 + Math.random() * 60}%`, top: `${10 + Math.random() * 80}%`,
                       backgroundColor: ["#f97316", "#fb923c", "#22c55e", "#eab308", "#a855f7", "#3b82f6"][i],
-                      animationDelay: `${i * 0.08}s`,
-                      width: `${4 + Math.random() * 4}px`,
-                      height: `${4 + Math.random() * 4}px`,
-                    }}
-                  />
-                ))}
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <span
-                    key={`confetti-${i}`}
-                    className="confetti-piece"
-                    style={{
-                      left: `${30 + Math.random() * 40}%`,
-                      top: `${40 + Math.random() * 20}%`,
+                      animationDelay: `${i * 0.08}s`, width: `${4 + Math.random() * 4}px`, height: `${4 + Math.random() * 4}px`,
+                    }} />
+                  ))}
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <span key={`confetti-${i}`} className="confetti-piece" style={{
+                      left: `${30 + Math.random() * 40}%`, top: `${40 + Math.random() * 20}%`,
                       backgroundColor: ["#f97316", "#22c55e", "#eab308", "#3b82f6"][i],
                       animationDelay: `${i * 0.1}s`,
-                    }}
-                  />
-                ))}
-              </>
-            )}
-            {justAdded ? (
-              <motion.span
-                key="check"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="flex items-center gap-1.5"
-              >
-                <Check size={13} className="btn-check" />
-                Adicionado!
-              </motion.span>
-            ) : (
-              <>
-                <ShoppingBag size={13} /> Adicionar
-              </>
-            )}
-          </motion.button>
+                    }} />
+                  ))}
+                </>
+              )}
+              {justAdded ? (
+                <motion.span key="check-g" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-1.5">
+                  <Check size={13} className="btn-check" /> Adicionado!
+                </motion.span>
+              ) : (
+                <><ShoppingBag size={13} /> Adicionar</>
+              )}
+            </motion.button>
+          )}
         </div>
       </motion.div>
     </motion.div>

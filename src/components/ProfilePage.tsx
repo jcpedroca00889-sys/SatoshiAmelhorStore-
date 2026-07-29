@@ -2,11 +2,12 @@ import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   X, User, Package, Clock, ChevronRight,
-  ShoppingBag, CheckCircle2, Loader2, AlertCircle,
+  ShoppingBag, CheckCircle2, Loader2, AlertCircle, Bell,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { getOrdersByEmail, type Order, type OrderStatus } from "../data/orders";
 import { isDigitalProduct } from "../data/deliveries";
+import { getNotificationsByUser, getRecentlyAvailableNotifications, unsubscribeFromStock } from "../data/stockNotifications";
 import OrderDetailPage from "./OrderDetailPage";
 
 const statusLabels: Record<OrderStatus, string> = {
@@ -40,6 +41,7 @@ export default function ProfilePage({ onClose }: { onClose: (view?: string) => v
   const { user } = useAuth();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [filterStatus, setFilterStatus] = useState<OrderStatus | "all">("all");
+  const [notifTab, setNotifTab] = useState<"pedidos" | "alertas">("pedidos");
 
   const allOrders = useMemo(() => {
     if (!user) return [];
@@ -115,6 +117,45 @@ export default function ProfilePage({ onClose }: { onClose: (view?: string) => v
           </div>
         ) : (
           <>
+            {/* ─── Tab Switcher ─── */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-2 mb-4"
+            >
+              <button
+                onClick={() => setNotifTab("pedidos")}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  notifTab === "pedidos"
+                    ? "bg-orange-500/10 text-orange-500 border border-orange-500/30"
+                    : "text-text-tertiary hover:text-text-secondary border border-transparent"
+                }`}
+              >
+                <Package size={14} />
+                Pedidos
+              </button>
+              <button
+                onClick={() => setNotifTab("alertas")}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  notifTab === "alertas"
+                    ? "bg-orange-500/10 text-orange-500 border border-orange-500/30"
+                    : "text-text-tertiary hover:text-text-secondary border border-transparent"
+                }`}
+              >
+                <Bell size={14} />
+                Meus Alertas
+                {user && getNotificationsByUser(user.id).length > 0 && (
+                  <span className="text-[10px] bg-yellow-500/15 text-yellow-400 px-1.5 py-0.5 rounded-full">
+                    {getNotificationsByUser(user.id).length}
+                  </span>
+                )}
+              </button>
+            </motion.div>
+
+            {notifTab === "alertas" && user && (
+              <NotificationsView user={user} />
+            )}
+
             {/* ─── User Info Card ─── */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -155,6 +196,8 @@ export default function ProfilePage({ onClose }: { onClose: (view?: string) => v
               ))}
             </motion.div>
 
+            {notifTab === "pedidos" && (
+            <>
             {/* ─── Order History ─── */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -258,9 +301,106 @@ export default function ProfilePage({ onClose }: { onClose: (view?: string) => v
                 </div>
               )}
             </motion.div>
-          </>
-        )}
+            </>
+          )}
+        </>
+      )}
       </div>
     </motion.div>
+  );
+}
+
+// ==================== Notifications View ====================
+function NotificationsView({ user }: { user: NonNullable<ReturnType<typeof useAuth>["user"]> }) {
+  const [updateTick, setUpdateTick] = useState(0);
+  const notifications = useMemo(() => getNotificationsByUser(user.id), [user.id, updateTick]);
+  const recentlyAvailable = useMemo(() => getRecentlyAvailableNotifications(user.id), [user.id]);
+
+  const pending = notifications.filter((n) => n.notifiedAt === null);
+  const available = notifications.filter((n) => n.notifiedAt !== null);
+
+  const handleUnsubscribe = (id: string) => {
+    unsubscribeFromStock(id);
+    setUpdateTick((t) => t + 1);
+  };
+
+  // Removed redundant effect - useMemo depends on updateTick now
+
+  if (notifications.length === 0) {
+    return (
+      <div className="glass rounded-2xl border border-border/30 p-10 text-center mb-6">
+        <Bell size={32} className="mx-auto text-text-tertiary mb-3" />
+        <p className="text-sm text-text-tertiary">Você ainda não tem alertas de disponibilidade</p>
+        <p className="text-xs text-text-tertiary/60 mt-1">Clique em "Avise-me" em um produto indisponível para ser notificado</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 mb-6">
+      {recentlyAvailable.length > 0 && (
+        <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircle2 size={14} className="text-green-400" />
+            <p className="text-xs font-semibold text-green-400">Produtos disponíveis novamente!</p>
+          </div>
+          {recentlyAvailable.map((n) => (
+            <div key={n.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-green-500/5 mt-1">
+              <span className="text-xs text-text-primary">{n.productName}</span>
+              <span className="text-[10px] text-green-400">Disponível</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {pending.length > 0 && (
+        <>
+          <div className="flex items-center gap-2 mb-2">
+            <Bell size={14} className="text-yellow-400" />
+            <p className="text-xs font-semibold text-text-primary">Aguardando disponibilidade ({pending.length})</p>
+          </div>
+          {pending.map((n) => (
+            <div key={n.id} className="glass rounded-xl border border-border/30 p-3 hover:border-yellow-500/20 transition-all">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-text-primary truncate">{n.productName}</p>
+                  <p className="text-[10px] text-text-tertiary">
+                    Criado em {new Date(n.createdAt).toLocaleDateString("pt-BR")}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+                    Pendente
+                  </span>
+                  <button
+                    onClick={() => handleUnsubscribe(n.id)}
+                    className="p-1 rounded-lg text-text-tertiary hover:text-red-400 transition-colors"
+                    title="Cancelar alerta"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+
+      {available.length > 0 && (
+        <details className="mt-4">
+          <summary className="text-[10px] text-text-tertiary cursor-pointer hover:text-text-secondary transition-colors">
+            Histórico ({available.length} notificações)
+          </summary>
+          <div className="mt-2 space-y-1">
+            {available.map((n) => (
+              <div key={n.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-surface-2/20">
+                <span className="text-[10px] text-text-tertiary">{n.productName}</span>
+                <span className="text-[9px] text-green-400/60">Notificado</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
   );
 }

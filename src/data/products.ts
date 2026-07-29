@@ -14,6 +14,7 @@ export interface Product {
   whatIncluded: string[];
   highlights: string[];
   gallery: string[];
+  inStock?: boolean;
   type?: "digital" | "physical";
 }
 
@@ -515,6 +516,7 @@ export const productsData: Product[] = [
     whatIncluded: ["iPhone 17 Pro Max", "Cabo USB-C (2m)", "Adaptador 45W", "Película de proteção", "Capa silicone"],
     highlights: ["Chip A19 Pro", "Câmera 48MP + zoom 10x", "Tela ProMotion 120Hz", "Titânio aeroespacial"],
     gallery: ["📱", "📸", "🎨", "✨"],
+    inStock: false,
   },
   {
     id: "samsung-galaxy-s27",
@@ -697,6 +699,7 @@ export const productsData: Product[] = [
     whatIncluded: ["Desktop Gamer Extreme", "Teclado mecânico RGB", "Mouse gamer", "Monitor 27' 4K 144Hz"],
     highlights: ["Ryzen 9 9950X", "RTX 5090 32GB", "64GB DDR5", "SSD PCIe 5.0 2TB"],
     gallery: ["🖥️", "💻", "🎮", "⚡"],
+    inStock: false,
   },
   {
     id: "surface-laptop-7",
@@ -879,6 +882,7 @@ export const productsData: Product[] = [
     whatIncluded: ["Smart Ring Gen 3", "Base de carregamento sem fio", "Cabo USB-C", "Guia de tamanhos"],
     highlights: ["Titânio premium", "Sono + cardíaco", "7 dias bateria", "10 ATM"],
     gallery: ["💍", "❤️", "😴", "📊"],
+    inStock: false,
   },
 
   // ==================== STREAMING ====================
@@ -1031,6 +1035,7 @@ export const productsData: Product[] = [
     whatIncluded: ["Prime Video 1 mês", "Acesso ao catálogo completo", "Ativação imediata"],
     highlights: ["The Boys + Fallout", "4K HDR", "3 telas", "Preço imbatível"],
     gallery: ["📺", "🎬", "⚡", "🍿"],
+    inStock: false,
   },
 
   // ==================== PRODUTIVIDADE ====================

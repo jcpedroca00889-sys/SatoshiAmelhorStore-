@@ -3,13 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Star, Heart, Share2, ShoppingBag, ShoppingCart, Check, Shield,
   ChevronDown, ChevronUp, Minus, Plus, ArrowLeft, Package,
-  RefreshCw, MessageCircle, Award, Clock,
+  RefreshCw, MessageCircle, Award, Clock, Bell,
 } from "lucide-react";
 import type { Product } from "../data/products";
 import { productsData } from "../data/products";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
 import { getReviewsForProduct, getAverageRatingForProduct } from "../data/reviews";
+import { subscribeToStock, isUserSubscribed, unsubscribeFromStock } from "../data/stockNotifications";
 import ReviewFormModal from "./ReviewFormModal";
 
 type TabType = "descricao" | "detalhes" | "especificacoes" | "reviews";
@@ -29,7 +30,9 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
   const { addItem, openCartFullPage, totalItems } = useCart();
-  const { user } = useAuth();
+  const { user, openAuthPage } = useAuth();
+  const [notifSent, setNotifSent] = useState(false);
+  const isOutOfStock = product.inStock === false;
 
   const reviews = useMemo(() => getReviewsForProduct(product.id), [product.id]);
   const avgStats = useMemo(() => getAverageRatingForProduct(product.id), [product.id]);
@@ -48,10 +51,24 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
   ];
 
   const handleAddToCart = useCallback(() => {
+    if (isOutOfStock) return;
     addItem(product, quantity);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
-  }, [addItem, product, quantity]);
+  }, [addItem, product, quantity, isOutOfStock]);
+
+  const handleNotifyMe = useCallback(() => {
+    if (!user) { openAuthPage(); return; }
+    if (isUserSubscribed(user.id, product.id)) {
+      const subs = JSON.parse(localStorage.getItem("satoshi_stock_notifications") || "[]");
+      const sub = subs.find((s: any) => s.userId === user.id && s.productId === product.id && s.notifiedAt === null);
+      if (sub) unsubscribeFromStock(sub.id);
+      setNotifSent(false);
+      return;
+    }
+    const result = subscribeToStock(user.id, user.email || "", product.id);
+    if (result) { setNotifSent(true); setTimeout(() => setNotifSent(false), 2000); }
+  }, [user, openAuthPage, product]);
 
   return (
     <motion.div
@@ -195,6 +212,11 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                     ★ Destaque
                   </span>
                 )}
+                {isOutOfStock && (
+                  <span className="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse">
+                    Indisponível
+                  </span>
+                )}
               </div>
 
               <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-text-primary tracking-tight leading-tight">
@@ -282,87 +304,90 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
               )}
             </div>
 
-            {/* Quantity + Add to Cart with Animation */}
+            {/* Quantity + Add to Cart / Notify Button */}
             <div className="flex items-center gap-3 sm:gap-4 pt-2">
-              <div className="flex items-center gap-0.5 bg-surface-2/50 border border-border/30 rounded-xl p-0.5">
+              {isOutOfStock ? (
                 <motion.button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="p-2 sm:p-2.5 rounded-lg text-text-secondary hover:text-orange-500 hover:bg-orange-500/10 transition-all touch-target"
-                  whileTap={{ scale: 0.9 }}
-                  disabled={quantity <= 1}
+                  onClick={handleNotifyMe}
+                  className={`relative flex-1 flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl text-sm sm:text-base font-semibold transition-all touch-target overflow-hidden ${
+                    notifSent
+                      ? "bg-green-500/15 text-green-400 border-2 border-green-500/30"
+                      : "bg-yellow-500/15 text-yellow-400 border-2 border-yellow-500/30 hover:bg-yellow-500/25"
+                  }`}
+                  whileHover={notifSent ? {} : { scale: 1.02, y: -1 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <Minus size={16} />
+                  {notifSent ? (
+                    <motion.span key="check-page" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2">
+                      <Check size={20} /> Assinado! 🎉
+                    </motion.span>
+                  ) : (
+                    <><Bell size={18} /> {user && isUserSubscribed(user.id, product.id) ? "Inscrito para notificação" : "Avise-me quando disponível"}</>
+                  )}
                 </motion.button>
-                <span className="w-8 sm:w-10 text-center text-sm sm:text-base font-medium text-text-primary">{quantity}</span>
-                <motion.button
-                  onClick={() => setQuantity(Math.min(10, quantity + 1))}
-                  className="p-2 sm:p-2.5 rounded-lg text-text-secondary hover:text-orange-500 hover:bg-orange-500/10 transition-all touch-target"
-                  whileTap={{ scale: 0.9 }}
-                  disabled={quantity >= 10}
-                >
-                  <Plus size={16} />
-                </motion.button>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-0.5 bg-surface-2/50 border border-border/30 rounded-xl p-0.5">
+                    <motion.button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="p-2 sm:p-2.5 rounded-lg text-text-secondary hover:text-orange-500 hover:bg-orange-500/10 transition-all touch-target"
+                      whileTap={{ scale: 0.9 }}
+                      disabled={quantity <= 1}
+                    >
+                      <Minus size={16} />
+                    </motion.button>
+                    <span className="w-8 sm:w-10 text-center text-sm sm:text-base font-medium text-text-primary">{quantity}</span>
+                    <motion.button
+                      onClick={() => setQuantity(Math.min(10, quantity + 1))}
+                      className="p-2 sm:p-2.5 rounded-lg text-text-secondary hover:text-orange-500 hover:bg-orange-500/10 transition-all touch-target"
+                      whileTap={{ scale: 0.9 }}
+                      disabled={quantity >= 10}
+                    >
+                      <Plus size={16} />
+                    </motion.button>
+                  </div>
 
-              <motion.button
-                onClick={handleAddToCart}
-                disabled={justAdded}
-                className={`relative flex-1 flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl text-sm sm:text-base font-semibold transition-all touch-target overflow-hidden ${
-                  justAdded
-                    ? "bg-green-500/15 text-green-400 border-2 border-green-500/30"
-                    : "bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/20"
-                }`}
-                whileHover={justAdded ? {} : { scale: 1.02, y: -1 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {/* Sparkle particles */}
-                {justAdded && (
-                  <>
-                    {Array.from({ length: 8 }).map((_, i) => (
-                      <span
-                        key={i}
-                        className="sparkle"
-                        style={{
-                          left: `${20 + Math.random() * 60}%`,
-                          top: `${10 + Math.random() * 80}%`,
-                          backgroundColor: ["#f97316", "#fb923c", "#22c55e", "#eab308", "#a855f7", "#3b82f6", "#ec4899", "#14b8a6"][i],
-                          animationDelay: `${i * 0.06}s`,
-                          width: `${4 + Math.random() * 5}px`,
-                          height: `${4 + Math.random() * 5}px`,
-                        }}
-                      />
-                    ))}
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <span
-                        key={`confetti-${i}`}
-                        className="confetti-piece"
-                        style={{
-                          left: `${25 + Math.random() * 50}%`,
-                          top: `${30 + Math.random() * 30}%`,
-                          backgroundColor: ["#f97316", "#22c55e", "#eab308", "#3b82f6", "#a855f7", "#ec4899"][i],
-                          animationDelay: `${i * 0.08}s`,
-                        }}
-                      />
-                    ))}
-                  </>
-                )}
-                {justAdded ? (
-                  <motion.span
-                    key="check"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="flex items-center gap-2"
+                  <motion.button
+                    onClick={handleAddToCart}
+                    disabled={justAdded}
+                    className={`relative flex-1 flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl text-sm sm:text-base font-semibold transition-all touch-target overflow-hidden ${
+                      justAdded
+                        ? "bg-green-500/15 text-green-400 border-2 border-green-500/30"
+                        : "bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/20"
+                    }`}
+                    whileHover={justAdded ? {} : { scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    <Check size={20} className="btn-check" />
-                    Adicionado ao carrinho!
-                  </motion.span>
-                ) : (
-                  <>
-                    <ShoppingBag size={18} />
-                    Adicionar ao carrinho
-                  </>
-                )}
-              </motion.button>
+                    {/* Sparkle particles */}
+                    {justAdded && (
+                      <>
+                        {Array.from({ length: 8 }).map((_, i) => (
+                          <span key={i} className="sparkle" style={{
+                            left: `${20 + Math.random() * 60}%`, top: `${10 + Math.random() * 80}%`,
+                            backgroundColor: ["#f97316", "#fb923c", "#22c55e", "#eab308", "#a855f7", "#3b82f6", "#ec4899", "#14b8a6"][i],
+                            animationDelay: `${i * 0.06}s`, width: `${4 + Math.random() * 5}px`, height: `${4 + Math.random() * 5}px`,
+                          }} />
+                        ))}
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <span key={`confetti-${i}`} className="confetti-piece" style={{
+                            left: `${25 + Math.random() * 50}%`, top: `${30 + Math.random() * 30}%`,
+                            backgroundColor: ["#f97316", "#22c55e", "#eab308", "#3b82f6", "#a855f7", "#ec4899"][i],
+                            animationDelay: `${i * 0.08}s`,
+                          }} />
+                        ))}
+                      </>
+                    )}
+                    {justAdded ? (
+                      <motion.span key="check-page" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2">
+                        <Check size={20} className="btn-check" />
+                        Adicionado ao carrinho!
+                      </motion.span>
+                    ) : (
+                      <><ShoppingBag size={18} /> Adicionar ao carrinho</>
+                    )}
+                  </motion.button>
+                </>
+              )}
             </div>
 
             {/* Trust badges */}

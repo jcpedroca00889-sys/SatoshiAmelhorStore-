@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, Plus, Pencil, Trash2, X, Download, Upload,
   ChevronLeft, ChevronRight, LogOut,
   Save, Eye, AlertCircle, CheckCircle2, Search, Tags, Copy, AlertTriangle, ArrowUp, ArrowDown,
-  ShoppingBag, TrendingUp, TicketCheck, Clock, MessageCircle,
+  ShoppingBag, TrendingUp, TicketCheck, Clock, MessageCircle, Bell,
 } from "lucide-react";
 import { productsData, type Product } from "../data/products";
 import { loadOrders, type Order } from "../data/orders";
@@ -16,6 +16,10 @@ import {
   TICKET_STATUS_LABELS, TICKET_STATUS_COLORS, TICKET_CATEGORIES,
   getTicketById, loadTickets, getTicketStats,
 } from "../data/tickets";
+import {
+  getPendingNotifications, getPendingByProduct, getNotificationStats,
+  markAllAsAvailableForProduct,
+} from "../data/stockNotifications";
 
 // ─── Storage keys ───
 const STORAGE_KEY = "satoshi_store_products";
@@ -171,7 +175,7 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
   const [page, setPage] = useState(0);
   const [saved, setSaved] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "categories" | "pedidos" | "vendas" | "tickets">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "categories" | "pedidos" | "vendas" | "tickets" | "notificacoes">("dashboard");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [sortField, setSortField] = useState<string | null>(null);
@@ -182,6 +186,7 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
   const [allOrders, setAllOrders] = useState<Order[]>(loadOrders());
   const [allTickets, setAllTickets] = useState<Ticket[]>(loadTickets());
   const [selectedAdminTicket, setSelectedAdminTicket] = useState<Ticket | null>(null);
+  const [notifRefresh, setNotifRefresh] = useState(0);
   const PER_PAGE = 10;
 
   useEffect(() => {
@@ -524,6 +529,20 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
             Tickets
             <span className="ml-auto text-[10px] bg-surface-3/60 px-1.5 py-0.5 rounded-full">{allTickets.filter((t) => t.status !== "closed" && t.status !== "resolved").length}</span>
           </button>
+          <button
+            onClick={() => setActiveTab("notificacoes")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              activeTab === "notificacoes"
+                ? "glass-card-3d text-orange-500"
+                : "text-text-tertiary hover:text-text-secondary hover:bg-surface-3/30"
+            }`}
+          >
+            <Bell size={16} />
+            Notificações
+            {getNotificationStats().pending > 0 && (
+              <span className="ml-auto text-[10px] bg-yellow-500/15 text-yellow-400 px-1.5 py-0.5 rounded-full">{getNotificationStats().pending}</span>
+            )}
+          </button>
         </nav>
 
         <div className="p-3 border-t border-border/30 space-y-1 shrink-0">
@@ -552,6 +571,7 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
               {activeTab === "pedidos" && <ShoppingBag size={16} className="text-orange-500" />}
               {activeTab === "vendas" && <TrendingUp size={16} className="text-orange-500" />}
               {activeTab === "tickets" && <TicketCheck size={16} className="text-orange-500" />}
+              {activeTab === "notificacoes" && <Bell size={16} className="text-orange-500" />}
             </div>
             <h1 className="text-sm font-semibold text-text-primary">
               {activeTab === "dashboard" && "Dashboard"}
@@ -560,6 +580,7 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
               {activeTab === "pedidos" && "Pedidos"}
               {activeTab === "vendas" && "Vendas"}
               {activeTab === "tickets" && "Tickets de Suporte"}
+              {activeTab === "notificacoes" && "Notificações de Estoque"}
             </h1>
           </div>
         </header>
@@ -779,6 +800,14 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
             <AdminTicketsView
               tickets={allTickets}
               onSelectTicket={setSelectedAdminTicket}
+            />
+          )}
+
+          {/* Notifications Tab */}
+          {activeTab === "notificacoes" && (
+            <AdminNotificationsView
+              refresh={notifRefresh}
+              onRefresh={() => setNotifRefresh((p) => p + 1)}
             />
           )}
         </div>
@@ -1540,6 +1569,115 @@ function ArrayEditor({
             </button>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+//  ADMIN NOTIFICATIONS VIEW
+// ════════════════════════════════════════════════════════════
+
+function AdminNotificationsView({ refresh, onRefresh }: { refresh: number; onRefresh: () => void }) {
+  const stats = useMemo(() => getNotificationStats(), [refresh]);
+  const pendingByProduct = useMemo(() => getPendingByProduct(), [refresh]);
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="rounded-2xl border border-border/20 p-5 bg-surface-2/10">
+          <p className="text-2xl font-bold text-yellow-400">{stats.pending}</p>
+          <p className="text-xs text-text-tertiary mt-0.5">Pendentes</p>
+        </div>
+        <div className="rounded-2xl border border-border/20 p-5 bg-surface-2/10">
+          <p className="text-2xl font-bold text-green-400">{stats.notified}</p>
+          <p className="text-xs text-text-tertiary mt-0.5">Notificados</p>
+        </div>
+        <div className="rounded-2xl border border-border/20 p-5 bg-surface-2/10">
+          <p className="text-2xl font-bold text-text-primary">{stats.total}</p>
+          <p className="text-xs text-text-tertiary mt-0.5">Total de inscrições</p>
+        </div>
+      </div>
+
+      {/* Pending by product */}
+      <div className="rounded-2xl border border-border/20 p-5 bg-surface-2/10">
+        <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
+          <Bell size={14} className="text-yellow-400" />
+          Pendentes por Produto
+        </h3>
+        {pendingByProduct.length === 0 ? (
+          <p className="text-xs text-text-tertiary text-center py-4">Nenhuma inscrição pendente 🎉</p>
+        ) : (
+          <div className="space-y-3">
+            {pendingByProduct.map((item) => {
+              const product = productsData.find((p) => p.id === item.productId);
+              return (
+                <div key={item.productId} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border/20 hover:border-yellow-500/20 transition-all">
+                  <span className="text-xl shrink-0">{product?.image || "📦"}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-text-primary truncate">{item.productName}</p>
+                    <p className="text-[10px] text-text-tertiary">{item.count} pessoa(s) aguardando</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const count = markAllAsAvailableForProduct(item.productId);
+                      if (count > 0) {
+                        onRefresh();
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/15 text-green-400 hover:bg-green-500/25 text-xs font-medium transition-colors"
+                  >
+                    <CheckCircle2 size={12} />
+                    Liberar
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* All pending raw list */}
+      <div className="rounded-2xl border border-border/20 p-5 bg-surface-2/10">
+        <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
+          <Clock size={14} className="text-orange-400" />
+          Todas as Inscrições Pendentes
+        </h3>
+        {(() => {
+          const allPending = getPendingNotifications();
+          if (allPending.length === 0) {
+            return <p className="text-xs text-text-tertiary text-center py-4">Nenhuma inscrição pendente</p>;
+          }
+          return (
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              {allPending.map((n) => {
+                const product = productsData.find((p) => p.id === n.productId);
+                return (
+                  <div key={n.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-surface-2/20 border border-border/20">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-base shrink-0">{product?.image || "📦"}</span>
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-text-primary truncate">{n.productName}</p>
+                        <p className="text-[10px] text-text-tertiary">{n.userEmail || "Anônimo"}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const result = markAllAsAvailableForProduct(n.productId);
+                        if (result > 0) onRefresh();
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-green-500/15 text-green-400 hover:bg-green-500/25 text-[10px] font-medium transition-colors shrink-0"
+                    >
+                      <CheckCircle2 size={10} />
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
