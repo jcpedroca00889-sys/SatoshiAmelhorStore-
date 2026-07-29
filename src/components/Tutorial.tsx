@@ -17,7 +17,7 @@ export default function Tutorial() {
       {/* Floating button - only on desktop */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className="hidden md:flex fixed bottom-24 right-8 z-40 items-center gap-2 px-4 py-2.5 glass rounded-2xl text-text-secondary hover:text-orange-500 hover:border-orange-500/30 shadow-lg transition-all duration-300"
+        className="hidden md:flex fixed bottom-24 right-8 z-40 items-center gap-2 px-4 py-2.5 glass-card-3d card-shine rounded-2xl text-text-secondary hover:text-orange-500 shadow-lg transition-all duration-300"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         aria-label="Ajuda"
@@ -57,7 +57,7 @@ export default function Tutorial() {
                 </div>
                 <motion.button
                   onClick={() => setIsOpen(false)}
-                  className="p-1 rounded-lg hover:bg-surface-4/50 text-text-tertiary hover:text-text-primary transition-colors"
+                  className="p-1 rounded-lg glass text-text-tertiary hover:text-text-primary transition-colors"
                   whileTap={{ scale: 0.9 }}
                 >
                   <X size={14} />

@@ -101,18 +101,18 @@ export default function Hero() {
         >
           <motion.a
             href="#todos-produtos"
-            className="w-full xs:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl sm:rounded-2xl text-sm sm:text-base touch-target"
+            className="w-full xs:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 glass-card-3d card-shine text-white font-medium rounded-xl sm:rounded-2xl text-sm sm:text-base touch-target"
             whileHover={{ scale: 1.05, y: -2, boxShadow: "0 12px 40px rgba(249,115,22,0.35)" }}
             whileTap={{ scale: 0.97 }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
-            Explorar Produtos
-            <ArrowRight size={16} className="sm:size-[18px]" />
+            <span className="text-orange-500 font-semibold">Explorar Produtos</span>
+            <ArrowRight size={16} className="sm:size-[18px] text-orange-500" />
           </motion.a>
 
           <motion.a
             href="#como-funciona"
-            className="w-full xs:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 glass text-text-primary font-medium rounded-xl sm:rounded-2xl text-sm sm:text-base touch-target"
+            className="w-full xs:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 glass-card-3d card-shine text-text-primary font-medium rounded-xl sm:rounded-2xl text-sm sm:text-base touch-target"
             whileHover={{ scale: 1.05, y: -2, boxShadow: "0 12px 40px rgba(249,115,22,0.12)" }}
             whileTap={{ scale: 0.97 }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}

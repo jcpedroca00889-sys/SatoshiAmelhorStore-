@@ -16,7 +16,7 @@ export default function HowItWorks() {
       <div className="max-w-md mx-auto px-4 text-center">
         <motion.button
           onClick={() => setIsOpen(!isOpen)}
-          className="inline-flex items-center gap-2 px-5 py-2.5 glass rounded-xl text-sm text-text-secondary hover:text-orange-500 hover:border-orange-500/30 transition-all duration-300"
+          className="inline-flex items-center gap-2 px-5 py-2.5 glass-card-3d card-shine text-sm text-text-secondary hover:text-orange-500 transition-all duration-300"
           whileHover={{ scale: 1.03, y: -1 }}
           whileTap={{ scale: 0.97 }}
           transition={{ type: "spring", stiffness: 300, damping: 17 }}
@@ -71,7 +71,7 @@ export default function HowItWorks() {
                 <div className="pt-2 border-t border-border/30">
                   <a
                     href="#todos-produtos"
-                    className="block text-center text-xs text-orange-500 hover:text-orange-400 transition-colors py-1"
+                    className="block text-center text-xs text-orange-500 hover:text-orange-400 transition-colors py-1 hover:bg-orange-500/5 rounded-lg"
                   >
                     Ver produtos →
                   </a>

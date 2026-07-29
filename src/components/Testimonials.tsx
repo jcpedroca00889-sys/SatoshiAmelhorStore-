@@ -235,7 +235,7 @@ export default function Testimonials() {
           <div className="flex items-center justify-center gap-6 mt-8">
             <motion.button
               onClick={prev}
-              className="p-3 rounded-xl glass text-text-secondary hover:text-orange-500 hover:border-orange-500/30 transition-all duration-300"
+              className="p-3 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-orange-500 transition-all duration-300"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               aria-label="Anterior"
@@ -251,7 +251,7 @@ export default function Testimonials() {
                   className={`rounded-full transition-all duration-300 ${
                     i === current
                       ? "w-8 h-2 bg-orange-500"
-                      : "w-2 h-2 bg-border hover:bg-border-light"
+                      : "w-2 h-2 glass hover:border-orange-500/30"
                   }`}
                   whileHover={{ scale: 1.2 }}
                   whileTap={{ scale: 0.9 }}
@@ -262,7 +262,7 @@ export default function Testimonials() {
 
             <motion.button
               onClick={next}
-              className="p-3 rounded-xl glass text-text-secondary hover:text-orange-500 hover:border-orange-500/30 transition-all duration-300"
+              className="p-3 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-orange-500 transition-all duration-300"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               aria-label="Próximo"

@@ -76,13 +76,13 @@ export default function Newsletter() {
               </div>
               <motion.button
                 type="submit"
-                className="group inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-2xl shrink-0 preserve-3d"
+                className="group inline-flex items-center justify-center gap-2 px-6 py-3.5 glass-card-3d card-shine text-white font-medium rounded-2xl shrink-0"
                 whileHover={{ scale: 1.05, y: -2, boxShadow: "0 12px 40px rgba(249,115,22,0.3)" }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                Inscrever
-                <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+                <span className="text-orange-500 font-semibold">Inscrever</span>
+                <ArrowRight size={16} className="text-orange-500 transition-transform duration-300 group-hover:translate-x-1" />
               </motion.button>
             </motion.form>
           </div>
