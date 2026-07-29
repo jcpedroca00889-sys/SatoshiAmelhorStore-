@@ -742,7 +742,7 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
           {activeTab === "pedidos" && (
             <AdminOrders
               orders={allOrders}
-              onUpdate={setAllOrders}
+              onUpdate={() => setAllOrders(loadOrders())}
             />
           )}
 
