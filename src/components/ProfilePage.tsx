@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { getOrdersByEmail, type Order, type OrderStatus } from "../data/orders";
+import { isDigitalProduct } from "../data/deliveries";
 import OrderDetailPage from "./OrderDetailPage";
 
 const statusLabels: Record<OrderStatus, string> = {
@@ -212,9 +213,21 @@ export default function ProfilePage({ onClose }: { onClose: (view?: string) => v
                             <Clock size={10} />
                             {formatDate(order.createdAt)}
                           </p>
-                          <p className="text-[11px] text-text-tertiary mt-0.5">
-                            {order.items.length} item{order.items.length !== 1 ? "s" : ""} &bull; {formatPrice(order.total)}
-                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[11px] text-text-tertiary">
+                              {order.items.length} item{order.items.length !== 1 ? "s" : ""} &bull; {formatPrice(order.total)}
+                            </span>
+                            {order.items.some((i) => isDigitalProduct(i.productId)) && (
+                              <span className="text-[9px] text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded-full border border-green-500/20 font-medium">
+                                Digital
+                              </span>
+                            )}
+                            {order.status === "delivered" && order.deliveryContent && order.deliveryContent.length > 0 && (
+                              <span className="text-[9px] text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded-full border border-orange-500/20 font-medium">
+                                Conteúdo Liberado
+                              </span>
+                            )}
+                          </div>
                           {order.items.length > 0 && (
                             <div className="flex items-center gap-1.5 mt-2">
                               {order.items.slice(0, 3).map((item) => (

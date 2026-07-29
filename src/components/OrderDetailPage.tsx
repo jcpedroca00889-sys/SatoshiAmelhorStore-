@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
   X, ArrowLeft, Package, MapPin, User, Mail,
   Clock, CreditCard, CheckCircle2, Loader2,
-  ShoppingBag, Truck, AlertCircle,
+  ShoppingBag, Truck, AlertCircle, Copy, Check,
 } from "lucide-react";
 import type { Order, OrderStatus } from "../data/orders";
 
@@ -65,6 +65,52 @@ function formatDate(iso: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function DigitalDeliveryContent({ deliveryContent }: { deliveryContent: { label: string; value: string }[] }) {
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+
+  const copyToClipboard = async (text: string, idx: number) => {
+    try { await navigator.clipboard.writeText(text); } catch {}
+    setCopiedIdx(idx);
+    setTimeout(() => setCopiedIdx(null), 2000);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.08 }}
+      className="glass rounded-2xl border border-green-500/20 bg-green-500/5 p-5 sm:p-6"
+    >
+      <h3 className="text-sm font-bold text-green-400 mb-4 flex items-center gap-2">
+        <CheckCircle2 size={14} />
+        Conteúdo da Entrega Digital
+      </h3>
+      <div className="space-y-2">
+        {deliveryContent.map((item, idx) => (
+          <div
+            key={idx}
+            className="flex items-center gap-2 p-3 rounded-xl bg-black/20 border border-green-500/10 group"
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-text-tertiary mb-0.5">{item.label}</p>
+              <p className="text-[12px] text-text-primary font-mono break-all">{item.value}</p>
+            </div>
+            <button
+              onClick={() => copyToClipboard(item.value, idx)}
+              className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-text-tertiary hover:text-green-400 hover:bg-green-500/10 transition-all"
+            >
+              {copiedIdx === idx ? <Check size={14} /> : <Copy size={14} />}
+            </button>
+          </div>
+        ))}
+      </div>
+      <p className="text-[10px] text-text-tertiary/60 mt-3 text-center">
+        Copie os dados acima para acessar seu produto. Guarde em local seguro.
+      </p>
+    </motion.div>
+  );
 }
 
 export default function OrderDetailPage({
@@ -206,6 +252,51 @@ export default function OrderDetailPage({
             <AlertCircle size={32} className="text-red-400 mx-auto mb-3" />
             <h3 className="text-base font-semibold text-text-primary mb-1">Pedido Cancelado</h3>
             <p className="text-sm text-text-tertiary">Este pedido foi cancelado e não será processado.</p>
+            {order.rejectionReason && (
+              <p className="text-xs text-red-400 mt-3 bg-red-500/10 rounded-lg px-3 py-2 inline-block">
+                Motivo: {order.rejectionReason}
+              </p>
+            )}
+          </motion.div>
+        )}
+
+        {/* ─── Digital Delivery Content ─── */}
+        {!isCancelled && order.deliveryContent && order.deliveryContent.length > 0 && (
+          <DigitalDeliveryContent deliveryContent={order.deliveryContent} />
+        )}
+
+        {/* ─── Physical Delivery Info (Tracking) ─── */}
+        {!isCancelled && !order.deliveryContent && order.trackingCode && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08 }}
+            className="glass rounded-2xl border border-purple-500/20 bg-purple-500/5 p-5 sm:p-6"
+          >
+            <h3 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2">
+              <Truck size={14} className="text-purple-400" />
+              Informações de Entrega
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-2/30 border border-border/20">
+                <Truck size={16} className="text-purple-400 shrink-0" />
+                <div>
+                  <p className="text-[10px] text-text-tertiary">Código de Rastreio</p>
+                  <p className="text-xs font-medium text-text-primary">{order.trackingCode}</p>
+                </div>
+              </div>
+              {order.deliveryNote && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-2/30 border border-border/20">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+                    <Package size={14} className="text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-text-tertiary">Observação</p>
+                    <p className="text-xs font-medium text-text-primary">{order.deliveryNote}</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
 
