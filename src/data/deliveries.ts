@@ -16,6 +16,102 @@ interface DigitalProductContent {
 const DIGITAL_DELIVERIES: DigitalProductContent[] = [
   // ─── Plataformas de Streaming ───
   {
+    productId: "netflix-premium-4k",
+    type: "subscription",
+    label: "Netflix Premium 4K",
+    items: [
+      [
+        { label: "Email de Acesso", value: "netflix.4k.user4512@tempmail.net" },
+        { label: "Senha", value: "N3tfl!x#4K@2026" },
+        { label: "Tipo de Plano", value: "Premium - 4K HDR" },
+        { label: "Telas Simultâneas", value: "4 telas" },
+        { label: "Data de Expiração", value: "15/07/2027" },
+        { label: "Instruções", value: "Faça login em netflix.com/br/login. Não altere email/senha." },
+      ],
+      [
+        { label: "Email de Acesso", value: "netflix.4k.user7831@tempmail.net" },
+        { label: "Senha", value: "Str0ng!N3tfl!x" },
+        { label: "Tipo de Plano", value: "Premium - 4K HDR" },
+        { label: "Telas Simultâneas", value: "4 telas" },
+        { label: "Data de Expiração", value: "20/08/2027" },
+        { label: "Instruções", value: "Recomendado usar VPN se estiver fora do Brasil." },
+      ],
+    ],
+  },
+  {
+    productId: "youtube-premium-1m",
+    type: "subscription",
+    label: "YouTube Premium",
+    items: [
+      [
+        { label: "Email de Acesso", value: "yt.premium5521@tempmail.net" },
+        { label: "Senha", value: "YTPr3m!um#2026" },
+        { label: "Plano", value: "Premium Individual" },
+        { label: "Válido até", value: "30/08/2027" },
+        { label: "Instruções", value: "Login em youtube.com/account. Inclui YouTube Music." },
+      ],
+      [
+        { label: "Email de Acesso", value: "yt.premium8893@tempmail.net" },
+        { label: "Senha", value: "YouTub3#Pr3m!um" },
+        { label: "Plano", value: "Premium Individual" },
+        { label: "Válido até", value: "15/09/2027" },
+        { label: "Instruções", value: "Não compartilhe a senha. Ative o background play." },
+      ],
+    ],
+  },
+  {
+    productId: "disney-plus-premium",
+    type: "subscription",
+    label: "Disney+ Premium",
+    items: [
+      [
+        { label: "Email de Acesso", value: "disney.premium3321@tempmail.net" },
+        { label: "Senha", value: "Mick3y#2026@Br" },
+        { label: "Plano", value: "Premium Mensal - 4K HDR" },
+        { label: "Válido até", value: "10/08/2027" },
+        { label: "Perfis", value: "5 perfis disponíveis" },
+        { label: "Instruções", value: "Login em disneyplus.com/pt-br." },
+      ],
+      [
+        { label: "Email de Acesso", value: "disney.premium7745@tempmail.net" },
+        { label: "Senha", value: "D!zn3y#Str3@m" },
+        { label: "Plano", value: "Premium Mensal - 4K HDR" },
+        { label: "Válido até", value: "05/09/2027" },
+        { label: "Instruções", value: "Inclui Star+. Não compartilhe a senha." },
+      ],
+    ],
+  },
+  {
+    productId: "hbo-max-premium",
+    type: "subscription",
+    label: "HBO Max Premium",
+    items: [
+      [
+        { label: "Email de Acesso", value: "hbomax.premium2213@tempmail.net" },
+        { label: "Senha", value: "HBO#M4x@2026" },
+        { label: "Plano", value: "Premium - Full HD" },
+        { label: "Válido até", value: "22/09/2027" },
+        { label: "Perfis", value: "3 perfis" },
+        { label: "Instruções", value: "Login em hbomax.com/br." },
+      ],
+    ],
+  },
+  {
+    productId: "prime-video-premium",
+    type: "subscription",
+    label: "Amazon Prime Video",
+    items: [
+      [
+        { label: "Email de Acesso", value: "prime.user6621@tempmail.net" },
+        { label: "Senha", value: "Amaz0n#Pr!me@26" },
+        { label: "Plano", value: "Prime Video Mensal" },
+        { label: "Benefícios", value: "Prime Video, Prime Music, Frete Grátis" },
+        { label: "Válido até", value: "18/10/2027" },
+        { label: "Instruções", value: "Login em amazon.com.br." },
+      ],
+    ],
+  },
+  {
     productId: "netflix-premium-ultra",
     type: "subscription",
     label: "Conta Netflix Premium Ultra",
@@ -99,21 +195,6 @@ const DIGITAL_DELIVERIES: DigitalProductContent[] = [
       ],
     ],
   },
-  {
-    productId: "prime-gaming-ultra",
-    type: "subscription",
-    label: "Prime Gaming Ultra",
-    items: [
-      [
-        { label: "Email de Acesso", value: "prime.user7721@tempmail.net" },
-        { label: "Senha", value: "Amaz0n#Prime!26" },
-        { label: "Benefícios", value: "Prime Video, Prime Music, Prime Reading, Twitch Prime" },
-        { label: "Válido até", value: "18/09/2026" },
-        { label: "Instruções", value: "Login em amazon.com.br. Resgate os benefícios no painel Prime Gaming." },
-      ],
-    ],
-  },
-
   // ─── Cursos e Assinaturas ───
   {
     productId: "curso-fullstack-master",
@@ -187,6 +268,90 @@ const DIGITAL_DELIVERIES: DigitalProductContent[] = [
     ],
   },
 
+  // ─── Assinaturas de Produtividade ───
+  {
+    productId: "chatgpt-plus-1m",
+    type: "subscription",
+    label: "ChatGPT Plus",
+    items: [
+      [
+        { label: "Email de Acesso", value: "chatgpt.user4512@tempmail.net" },
+        { label: "Senha", value: "GPT#Plu5@2026" },
+        { label: "Plano", value: "Plus - GPT-4 ilimitado" },
+        { label: "Válido até", value: "30/09/2027" },
+        { label: "Recursos", value: "GPT-4, DALL-E 3, Plugins, Navegação Web" },
+        { label: "Instruções", value: "Login em chat.openai.com. Não compartilhe a conta." },
+      ],
+      [
+        { label: "Email de Acesso", value: "chatgpt.user7834@tempmail.net" },
+        { label: "Senha", value: "Ch4tGPT#Plus!" },
+        { label: "Plano", value: "Plus - GPT-4 ilimitado" },
+        { label: "Válido até", value: "15/10/2027" },
+        { label: "Instruções", value: "Troque a senha após o primeiro acesso." },
+      ],
+    ],
+  },
+  {
+    productId: "notion-plus-1m",
+    type: "subscription",
+    label: "Notion Plus",
+    items: [
+      [
+        { label: "Email de Acesso", value: "notion.user3321@tempmail.net" },
+        { label: "Senha", value: "N0t!on#Plus@26" },
+        { label: "Plano", value: "Plus - Upload Ilimitado" },
+        { label: "Válido até", value: "20/10/2027" },
+        { label: "Recursos", value: "Upload ilimitado, Convidados ilimitados, Histórico 30 dias" },
+        { label: "Instruções", value: "Login em notion.so. Aceite o convite no email." },
+      ],
+    ],
+  },
+  {
+    productId: "midjourney-1m",
+    type: "subscription",
+    label: "Midjourney Premium",
+    items: [
+      [
+        { label: "Email de Acesso", value: "mj.user6643@tempmail.net" },
+        { label: "Senha", value: "M1djourn3y#Pr0" },
+        { label: "Plano", value: "Premium - Geração Ilimitada" },
+        { label: "Válido até", value: "25/10/2027" },
+        { label: "Recursos", value: "Geração ilimitada (relax), 15h GPU turbo, Upscale 4K" },
+        { label: "Instruções", value: "Acesse via Discord. Link de convite incluso no email." },
+      ],
+    ],
+  },
+  {
+    productId: "canva-pro-1m",
+    type: "subscription",
+    label: "Canva Pro",
+    items: [
+      [
+        { label: "Email de Acesso", value: "canva.pro.user2291@tempmail.net" },
+        { label: "Senha", value: "C4nv4#Pr0@2026" },
+        { label: "Plano", value: "Pro - Todos os recursos" },
+        { label: "Válido até", value: "10/11/2027" },
+        { label: "Recursos", value: "100M+ templates, Remoção de fundo IA, 100GB, Agendamento" },
+        { label: "Instruções", value: "Login em canva.com. Ative o kit de branding." },
+      ],
+    ],
+  },
+  {
+    productId: "figma-professional-1m",
+    type: "subscription",
+    label: "Figma Professional",
+    items: [
+      [
+        { label: "Email de Acesso", value: "figma.pro.user7782@tempmail.net" },
+        { label: "Senha", value: "F1gm4#Pr0f@26" },
+        { label: "Plano", value: "Professional - Componentes ilimitados" },
+        { label: "Válido até", value: "05/11/2027" },
+        { label: "Recursos", value: "Componentes ilimitados, Bibliotecas de equipe, Modo Dev" },
+        { label: "Instruções", value: "Login em figma.com. Aceite o convite da equipe." },
+      ],
+    ],
+  },
+
   // ─── Licenças de Software ───
   {
     productId: "windows-11-pro",
@@ -240,7 +405,7 @@ const DIGITAL_DELIVERIES: DigitalProductContent[] = [
     ],
   },
   {
-    productId: "adobe-creative-cloud",
+    productId: "adobe-creative-cloud-1m",
     type: "subscription",
     label: "Adobe Creative Cloud PRO",
     items: [
