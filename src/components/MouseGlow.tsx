@@ -49,7 +49,6 @@ export default function MouseGlow() {
       glow.style.height = "120px";
     };
 
-    // ── rAF loop ──
     const loop = () => {
       el.style.transform = `translate3d(${pos.current.x}px,${pos.current.y}px,0) translate(-50%,-50%)`;
 
@@ -62,7 +61,6 @@ export default function MouseGlow() {
       raf.current = requestAnimationFrame(loop);
     };
 
-    // ── Event handlers ──
     const onMouseMove = (e: MouseEvent) => {
       pos.current.x = e.clientX;
       pos.current.y = e.clientY;
@@ -98,11 +96,11 @@ export default function MouseGlow() {
   }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[100] hidden lg:block" aria-hidden="true">
-      {/* Glow aura — segue com atraso suave */}
+    <>
+      {/* Glow aura — sem overlay, cada elemento é independente com pointer-events:none */}
       <div
         ref={glowRef}
-        className="absolute will-change-transform rounded-full"
+        className="fixed pointer-events-none z-[100] hidden lg:block rounded-full"
         style={{
           width: 120,
           height: 120,
@@ -114,10 +112,10 @@ export default function MouseGlow() {
         }}
       />
 
-      {/* Cursor — anel + ponto, segue o mouse sem delay */}
+      {/* Cursor — anel + ponto */}
       <div
         ref={cursorRef}
-        className="absolute will-change-transform flex items-center justify-center"
+        className="fixed pointer-events-none z-[100] hidden lg:flex items-center justify-center"
         style={{
           width: 24,
           height: 24,
@@ -127,7 +125,6 @@ export default function MouseGlow() {
           transition: "opacity 0.35s ease",
         }}
       >
-        {/* Anel */}
         <div
           ref={ringRef}
           className="absolute rounded-full"
@@ -139,7 +136,6 @@ export default function MouseGlow() {
               "width 0.25s ease, height 0.25s ease, border-color 0.2s ease, border-width 0.2s ease",
           }}
         />
-        {/* Ponto central */}
         <div
           className="rounded-full"
           style={{
@@ -151,6 +147,6 @@ export default function MouseGlow() {
           }}
         />
       </div>
-    </div>
+    </>
   );
 }
