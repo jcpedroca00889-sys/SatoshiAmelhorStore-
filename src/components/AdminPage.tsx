@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Plus, Pencil, Trash2, X, Download, Upload,
   ChevronLeft, ChevronRight, LogOut,
-  Save, AlertCircle, CheckCircle2, Search, Tags, Copy, AlertTriangle,
+  Save, Eye, AlertCircle, CheckCircle2, Search, Tags, Copy, AlertTriangle,
 } from "lucide-react";
 import { productsData, type Product } from "../data/products";
 
@@ -622,6 +622,7 @@ function ProductFormModal({
 }) {
   const [form, setForm] = useState<Product>({ ...product });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showPreview, setShowPreview] = useState(false);
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
@@ -844,8 +845,49 @@ function ProductFormModal({
             </div>
           </div>
 
+          {showPreview && (
+            <div className="px-5 py-4 border-b border-border/30 bg-surface-2/20">
+              <div className="max-w-[240px] mx-auto glass-card-3d rounded-2xl overflow-hidden">
+                <div className="aspect-square flex items-center justify-center bg-surface-3 text-4xl"
+                  style={{ backgroundColor: form.color + "15" }}>
+                  <span className="select-none">{form.image || "📦"}</span>
+                </div>
+                <div className="p-3 space-y-1.5">
+                  <div className="flex items-center gap-1">
+                    <span className="inline-flex px-1.5 py-0.5 rounded-md bg-surface-3/80 text-[9px] text-text-secondary">
+                      {form.category || "Sem categoria"}
+                    </span>
+                  </div>
+                  <h3 className="text-xs font-semibold text-text-primary leading-tight">
+                    {form.name || "Nome do produto"}
+                  </h3>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <span key={i} style={{ color: i < Math.round(form.rating) ? "#eab308" : "#334155" }}>★</span>
+                    ))}
+                    <span className="text-[9px] text-text-tertiary ml-1">({form.rating}.0)</span>
+                  </div>
+                  <span className="inline-block text-sm font-bold text-orange-500">
+                    {form.price || "R$ 0,00"}
+                  </span>
+                  <button className="w-full py-1.5 rounded-xl border border-border/30 text-[10px] text-text-secondary hover:text-orange-500 transition-colors mt-1 cursor-default">
+                    Adicionar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Footer */}
           <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-border/30 bg-surface/80 backdrop-blur-sm">
+            <button onClick={() => setShowPreview(!showPreview)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl glass-card-3d card-shine text-sm transition-colors ${
+                showPreview ? "text-orange-500" : "text-text-secondary hover:text-orange-500"
+              }`}
+            >
+              <Eye size={15} />
+              Preview
+            </button>
             <button onClick={onClose} className="px-4 py-2 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-text-primary text-sm">
               Cancelar
             </button>
