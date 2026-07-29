@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Package, Plus, Pencil, Trash2, X, Download, Upload,
+  LayoutDashboard, Package, Plus, Pencil, Trash2, X, Download, Upload,
   ChevronLeft, ChevronRight, LogOut,
   Save, Eye, AlertCircle, CheckCircle2, Search, Tags, Copy, AlertTriangle, ArrowUp, ArrowDown,
 } from "lucide-react";
@@ -422,265 +422,290 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
     });
   };
 
+  const catCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    products.forEach((p) => { counts[p.category] = (counts[p.category] || 0) + 1; });
+    return counts;
+  }, [products]);
+
   return (
-    <div className="min-h-screen bg-surface">
-      {/* Top Bar */}
-      <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-xl border-b border-border/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
-              <Package size={16} className="text-white" />
-            </div>
-            <span className="text-sm font-semibold text-text-primary">Admin</span>
+    <div className="min-h-screen bg-surface flex">
+      <aside className="fixed left-0 top-0 h-full w-56 lg:w-60 z-40 bg-surface/95 backdrop-blur-xl border-r border-border/30 flex flex-col">
+        <div className="flex items-center gap-3 px-5 h-14 sm:h-16 border-b border-border/30 shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+            <Package size={16} className="text-white" />
           </div>
-          {/* Tabs */}
-          <div className="flex items-center gap-1 bg-surface-3/50 rounded-xl p-0.5 border border-border/20">
-            <button
-              onClick={() => setActiveTab("dashboard")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === "dashboard"
-                  ? "glass-card-3d text-orange-500"
-                  : "text-text-tertiary hover:text-text-secondary"
-              }`}
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => setActiveTab("products")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === "products"
-                  ? "glass-card-3d text-orange-500"
-                  : "text-text-tertiary hover:text-text-secondary"
-              }`}
-            >
-              Produtos ({products.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("categories")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === "categories"
-                  ? "glass-card-3d text-orange-500"
-                  : "text-text-tertiary hover:text-text-secondary"
-              }`}
-            >
-              Categorias ({categories.length})
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={handleImport} className="p-2 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-orange-500" title="Importar JSON">
-              <Upload size={16} />
-            </button>
-            <button onClick={handleExport} className="p-2 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-orange-500" title="Exportar JSON">
-              <Download size={16} />
-            </button>
-            <button onClick={handleLogout} className="p-2 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-red-400" title="Sair">
-              <LogOut size={16} />
-            </button>
-          </div>
+          <span className="text-sm font-semibold text-text-primary">Admin</span>
         </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        {/* Saved feedback */}
-        <AnimatePresence>
-          {saved && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="mb-4 px-4 py-2.5 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center gap-2 text-green-400 text-sm"
-            >
-              <CheckCircle2 size={16} />
-              Dados salvos com sucesso!
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          <button
+            onClick={() => setActiveTab("dashboard")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              activeTab === "dashboard"
+                ? "glass-card-3d text-orange-500"
+                : "text-text-tertiary hover:text-text-secondary hover:bg-surface-3/30"
+            }`}
+          >
+            <LayoutDashboard size={16} />
+            Dashboard
+          </button>
+          <button
+            onClick={() => setActiveTab("products")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              activeTab === "products"
+                ? "glass-card-3d text-orange-500"
+                : "text-text-tertiary hover:text-text-secondary hover:bg-surface-3/30"
+            }`}
+          >
+            <Package size={16} />
+            Produtos
+            <span className="ml-auto text-[10px] bg-surface-3/60 px-1.5 py-0.5 rounded-full">{products.length}</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("categories")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              activeTab === "categories"
+                ? "glass-card-3d text-orange-500"
+                : "text-text-tertiary hover:text-text-secondary hover:bg-surface-3/30"
+            }`}
+          >
+            <Tags size={16} />
+            Categorias
+            <span className="ml-auto text-[10px] bg-surface-3/60 px-1.5 py-0.5 rounded-full">{categories.length}</span>
+          </button>
+        </nav>
 
-        {/* Dashboard Tab */}
-        {activeTab === "dashboard" && (
-          <DashboardView products={products} categories={categories} />
-        )}
+        <div className="p-3 border-t border-border/30 space-y-1 shrink-0">
+          <button onClick={handleImport} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-text-tertiary hover:text-text-secondary hover:bg-surface-3/30 transition-all" title="Importar JSON">
+            <Upload size={16} />
+            Importar
+          </button>
+          <button onClick={handleExport} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-text-tertiary hover:text-text-secondary hover:bg-surface-3/30 transition-all" title="Exportar JSON">
+            <Download size={16} />
+            Exportar
+          </button>
+          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-text-tertiary hover:text-red-400 hover:bg-red-500/5 transition-all" title="Sair">
+            <LogOut size={16} />
+            Sair
+          </button>
+        </div>
+      </aside>
 
-        {/* Products Tab */}
-        {activeTab === "products" && (
-          <>
-            <div className="flex items-center gap-2 mb-6">
-              <div className="flex-1 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border/30 bg-surface-2/30 focus-within:border-orange-500/50 transition-all">
-                <Search size={16} className="text-text-tertiary shrink-0" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-                  placeholder="Buscar produtos..."
-                  className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-tertiary/60 focus:outline-none"
-                />
-              </div>
-              <select
-                value={categoryFilter || ""}
-                onChange={(e) => { setCategoryFilter(e.target.value || null); setPage(0); }}
-                className="px-3 py-2.5 rounded-xl border border-border/30 bg-surface-2/30 text-sm text-text-primary focus:border-orange-500/50 focus:outline-none transition-all"
-              >
-                <option value="">Todas</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-              <button
-                onClick={() => { setEditing(emptyProduct()); setIsNew(true); }}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card-3d card-shine text-white font-medium text-sm"
-              >
-                <Plus size={16} />
-                Novo
-              </button>
+      <main className="flex-1 lg:ml-60 min-h-screen flex flex-col">
+        <header className="sticky top-0 z-30 bg-surface/95 backdrop-blur-xl border-b border-border/30 h-14 sm:h-16 flex items-center px-4 sm:px-6 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-orange-500/15 flex items-center justify-center">
+              {activeTab === "dashboard" && <LayoutDashboard size={16} className="text-orange-500" />}
+              {activeTab === "products" && <Package size={16} className="text-orange-500" />}
+              {activeTab === "categories" && <Tags size={16} className="text-orange-500" />}
             </div>
+            <h1 className="text-sm font-semibold text-text-primary">
+              {activeTab === "dashboard" && "Dashboard"}
+              {activeTab === "products" && "Produtos"}
+              {activeTab === "categories" && "Categorias"}
+            </h1>
+          </div>
+        </header>
 
-            {/* Bulk actions */}
-            {selectedIds.size > 0 && (
-              <div className="flex items-center gap-3 px-4 py-2.5 mb-3 rounded-xl bg-orange-500/10 border border-orange-500/20">
-                <span className="text-xs text-text-secondary">{selectedIds.size} selecionado(s)</span>
-                <div className="flex-1" />
+        <div className="flex-1 p-4 sm:p-6">
+          {/* Saved feedback */}
+          <AnimatePresence>
+            {saved && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="mb-4 px-4 py-2.5 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center gap-2 text-green-400 text-sm"
+              >
+                <CheckCircle2 size={16} />
+                Dados salvos com sucesso!
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Dashboard Tab */}
+          {activeTab === "dashboard" && (
+            <DashboardView products={products} categories={categories} />
+          )}
+
+          {/* Products Tab */}
+          {activeTab === "products" && (
+            <>
+              <div className="flex items-center gap-2 mb-6">
+                <div className="flex-1 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border/30 bg-surface-2/30 focus-within:border-orange-500/50 transition-all">
+                  <Search size={16} className="text-text-tertiary shrink-0" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+                    placeholder="Buscar produtos..."
+                    className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-tertiary/60 focus:outline-none"
+                  />
+                </div>
                 <select
-                  onChange={(e) => { if (e.target.value) { handleBulkMoveCategory(e.target.value); e.target.value = ""; } }}
-                  className="px-2.5 py-1.5 rounded-lg border border-border/30 bg-surface-2/30 text-xs text-text-primary focus:border-orange-500/50 focus:outline-none transition-all"
+                  value={categoryFilter || ""}
+                  onChange={(e) => { setCategoryFilter(e.target.value || null); setPage(0); }}
+                  className="px-3 py-2.5 rounded-xl border border-border/30 bg-surface-2/30 text-sm text-text-primary focus:border-orange-500/50 focus:outline-none transition-all"
                 >
-                  <option value="">Mover para...</option>
+                  <option value="">Todas</option>
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
-                <button onClick={handleBulkDelete} className="px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 hover:bg-red-500/25 text-xs font-medium transition-colors">
-                  Excluir
+                <button
+                  onClick={() => { setEditing(emptyProduct()); setIsNew(true); }}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card-3d card-shine text-white font-medium text-sm"
+                >
+                  <Plus size={16} />
+                  Novo
                 </button>
               </div>
-            )}
 
-            {paginated.length === 0 ? (
-              <div className="flex flex-col items-center gap-4 py-20 text-center">
-                <Package size={40} className="text-text-tertiary/30" />
-                <p className="text-sm text-text-tertiary">Nenhum produto encontrado</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="hidden sm:grid grid-cols-12 gap-3 px-4 py-2 text-[10px] text-text-tertiary uppercase tracking-wider font-medium">
-                  <div className="col-span-1 flex items-center">
-                    <input type="checkbox"
-                      checked={paginated.length > 0 && selectedIds.size === paginated.length}
-                      onChange={toggleSelectAll}
-                      className="w-3.5 h-3.5 rounded border-border/40 bg-surface-2/30 accent-orange-500 cursor-pointer" />
-                  </div>
-                  <button onClick={() => handleSort("name")} className="col-span-3 flex items-center text-left hover:text-text-primary transition-colors">
-                    Produto <SortIcon field="name" />
+              {/* Bulk actions */}
+              {selectedIds.size > 0 && (
+                <div className="flex items-center gap-3 px-4 py-2.5 mb-3 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                  <span className="text-xs text-text-secondary">{selectedIds.size} selecionado(s)</span>
+                  <div className="flex-1" />
+                  <select
+                    onChange={(e) => { if (e.target.value) { handleBulkMoveCategory(e.target.value); e.target.value = ""; } }}
+                    className="px-2.5 py-1.5 rounded-lg border border-border/30 bg-surface-2/30 text-xs text-text-primary focus:border-orange-500/50 focus:outline-none transition-all"
+                  >
+                    <option value="">Mover para...</option>
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <button onClick={handleBulkDelete} className="px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 hover:bg-red-500/25 text-xs font-medium transition-colors">
+                    Excluir
                   </button>
-                  <button onClick={() => handleSort("category")} className="col-span-2 flex items-center text-left hover:text-text-primary transition-colors">
-                    Categoria <SortIcon field="category" />
-                  </button>
-                  <button onClick={() => handleSort("price")} className="col-span-2 flex items-center text-left hover:text-text-primary transition-colors">
-                    Preço <SortIcon field="price" />
-                  </button>
-                  <button onClick={() => handleSort("rating")} className="col-span-2 flex items-center text-left hover:text-text-primary transition-colors">
-                    Avaliação <SortIcon field="rating" />
-                  </button>
-                  <div className="col-span-2 text-right">Ações</div>
                 </div>
-                {paginated.map((product) => (
-                  <div key={product.id} className={`grid grid-cols-1 sm:grid-cols-12 gap-3 items-center px-4 py-3 rounded-xl glass-card-3d card-shine border transition-all ${
-                    selectedIds.has(product.id) ? "border-orange-500/40" : "border-border/20 hover:border-orange-500/20"
-                  }`}>
+              )}
+
+              {paginated.length === 0 ? (
+                <div className="flex flex-col items-center gap-4 py-20 text-center">
+                  <Package size={40} className="text-text-tertiary/30" />
+                  <p className="text-sm text-text-tertiary">Nenhum produto encontrado</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="hidden sm:grid grid-cols-12 gap-3 px-4 py-2 text-[10px] text-text-tertiary uppercase tracking-wider font-medium">
                     <div className="col-span-1 flex items-center">
                       <input type="checkbox"
-                        checked={selectedIds.has(product.id)}
-                        onChange={() => toggleSelect(product.id)}
+                        checked={paginated.length > 0 && selectedIds.size === paginated.length}
+                        onChange={toggleSelectAll}
                         className="w-3.5 h-3.5 rounded border-border/40 bg-surface-2/30 accent-orange-500 cursor-pointer" />
                     </div>
-                    <div className="col-span-3 flex items-center gap-3">
-                      <span className="text-xl shrink-0">{product.image}</span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-text-primary truncate">{product.name}</p>
-                        <p className="text-[10px] text-text-tertiary font-mono truncate">{product.id}</p>
-                      </div>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-orange-500/10 text-orange-500">
-                        {product.category}
-                      </span>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="text-sm font-semibold text-orange-500">{product.price}</span>
-                    </div>
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-yellow-500">{product.rating}.0</span>
-                        <span className="text-[10px] text-text-tertiary">({product.reviewCount})</span>
-                      </div>
-                    </div>
-                    <div className="col-span-2 flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => { setEditing({ ...product }); setIsNew(false); }}
-                        className="p-2 rounded-lg glass-card-3d card-shine text-text-secondary hover:text-orange-500"
-                        title="Editar"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDuplicate(product)}
-                        className="p-2 rounded-lg glass-card-3d card-shine text-text-secondary hover:text-blue-400"
-                        title="Duplicar"
-                      >
-                        <Copy size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(product.id)}
-                        className="p-2 rounded-lg glass-card-3d card-shine text-text-secondary hover:text-red-400"
-                        title="Excluir"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                    <button onClick={() => handleSort("name")} className="col-span-3 flex items-center text-left hover:text-text-primary transition-colors">
+                      Produto <SortIcon field="name" />
+                    </button>
+                    <button onClick={() => handleSort("category")} className="col-span-2 flex items-center text-left hover:text-text-primary transition-colors">
+                      Categoria <SortIcon field="category" />
+                    </button>
+                    <button onClick={() => handleSort("price")} className="col-span-2 flex items-center text-left hover:text-text-primary transition-colors">
+                      Preço <SortIcon field="price" />
+                    </button>
+                    <button onClick={() => handleSort("rating")} className="col-span-2 flex items-center text-left hover:text-text-primary transition-colors">
+                      Avaliação <SortIcon field="rating" />
+                    </button>
+                    <div className="col-span-2 text-right">Ações</div>
                   </div>
-                ))}
-              </div>
-            )}
+                  {paginated.map((product) => (
+                    <div key={product.id} className={`grid grid-cols-1 sm:grid-cols-12 gap-3 items-center px-4 py-3 rounded-xl glass-card-3d card-shine border transition-all ${
+                      selectedIds.has(product.id) ? "border-orange-500/40" : "border-border/20 hover:border-orange-500/20"
+                    }`}>
+                      <div className="col-span-1 flex items-center">
+                        <input type="checkbox"
+                          checked={selectedIds.has(product.id)}
+                          onChange={() => toggleSelect(product.id)}
+                          className="w-3.5 h-3.5 rounded border-border/40 bg-surface-2/30 accent-orange-500 cursor-pointer" />
+                      </div>
+                      <div className="col-span-3 flex items-center gap-3">
+                        <span className="text-xl shrink-0">{product.image}</span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-text-primary truncate">{product.name}</p>
+                          <p className="text-[10px] text-text-tertiary font-mono truncate">{product.id}</p>
+                        </div>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-orange-500/10 text-orange-500">
+                          {product.category}
+                        </span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-sm font-semibold text-orange-500">{product.price}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-yellow-500">{product.rating}.0</span>
+                          <span className="text-[10px] text-text-tertiary">({product.reviewCount})</span>
+                        </div>
+                      </div>
+                      <div className="col-span-2 flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => { setEditing({ ...product }); setIsNew(false); }}
+                          className="p-2 rounded-lg glass-card-3d card-shine text-text-secondary hover:text-orange-500"
+                          title="Editar"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDuplicate(product)}
+                          className="p-2 rounded-lg glass-card-3d card-shine text-text-secondary hover:text-blue-400"
+                          title="Duplicar"
+                        >
+                          <Copy size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(product.id)}
+                          className="p-2 rounded-lg glass-card-3d card-shine text-text-secondary hover:text-red-400"
+                          title="Excluir"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-3 mt-6">
-                <button
-                  onClick={() => setPage(Math.max(0, page - 1))}
-                  disabled={page === 0}
-                  className="p-2 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-orange-500 disabled:opacity-30"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <span className="text-xs text-text-tertiary">
-                  {page + 1} / {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-                  disabled={page >= totalPages - 1}
-                  className="p-2 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-orange-500 disabled:opacity-30"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            )}
-          </>
-        )}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-3 mt-6">
+                  <button
+                    onClick={() => setPage(Math.max(0, page - 1))}
+                    disabled={page === 0}
+                    className="p-2 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-orange-500 disabled:opacity-30"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="text-xs text-text-tertiary">
+                    {page + 1} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                    disabled={page >= totalPages - 1}
+                    className="p-2 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-orange-500 disabled:opacity-30"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              )}
+            </>
+          )}
 
-        {/* Categories Tab */}
-        {activeTab === "categories" && (
-          <CategoriesManager
-            categories={categories}
-            productCounts={useMemo(() => {
-              const counts: Record<string, number> = {};
-              products.forEach((p) => { counts[p.category] = (counts[p.category] || 0) + 1; });
-              return counts;
-            }, [products])}
-            onAdd={handleAddCategory}
-            onRename={handleRenameCategory}
-            onDelete={handleDeleteCategory}
-            onReorder={handleReorderCategory}
-          />
-        )}
-      </div>
+          {/* Categories Tab */}
+          {activeTab === "categories" && (
+            <CategoriesManager
+              categories={categories}
+              productCounts={catCounts}
+              onAdd={handleAddCategory}
+              onRename={handleRenameCategory}
+              onDelete={handleDeleteCategory}
+              onReorder={handleReorderCategory}
+            />
+          )}
+        </div>
+      </main>
 
       {/* Edit Modal */}
       <AnimatePresence>
