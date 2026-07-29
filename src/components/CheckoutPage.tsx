@@ -93,7 +93,18 @@ export default function CheckoutPage() {
       digitalItems.forEach((item) => {
         for (let i = 0; i < item.quantity; i++) {
           const content = getDigitalDelivery(item.product.id, i);
-          if (content) deliveryContent!.push(...content);
+          if (content) {
+            const unitNum = item.quantity > 1 ? ` (Unidade ${i + 1})` : "";
+            const gLabel = `${item.product.name}${unitNum}`;
+            const gKey = `${item.product.id}-${i}`;
+            content.forEach((c) => {
+              deliveryContent!.push({
+                ...c,
+                groupLabel: gLabel,
+                groupKey: gKey,
+              });
+            });
+          }
         }
       });
     }
@@ -750,21 +761,44 @@ function StepSucesso({
             </div>
           </div>
           {deliveryContent.length > 0 ? (
-            <div className="flex items-start gap-2.5">
-              <Send size={13} className="text-orange-500 mt-0.5 shrink-0" />
-              <div className="flex-1">
-                <p className="text-[10px] text-text-tertiary">Entrega Digital</p>
-                <p className="text-xs font-medium text-green-400">Liberado &mdash; acesse já!</p>
-                <div className="mt-2 p-2 rounded-lg bg-green-500/10 border border-green-500/20 space-y-1.5">
-                  {deliveryContent.map((item, idx) => (
-                    <div key={idx} className="flex items-start gap-1.5">
-                      <span className="text-[9px] text-text-tertiary shrink-0 w-20">{item.label}:</span>
-                      <span className="text-[9px] text-text-primary font-mono break-all">{item.value}</span>
+            (() => {
+              // Agrupa por groupKey
+              const groups = new Map<string, { label: string; items: DeliveryContent[] }>();
+              deliveryContent.forEach((dc) => {
+                const key = dc.groupKey || "default";
+                if (!groups.has(key)) {
+                  groups.set(key, { label: dc.groupLabel || "Produto Digital", items: [] });
+                }
+                groups.get(key)!.items.push(dc);
+              });
+              return (
+                <div className="flex items-start gap-2.5">
+                  <Send size={13} className="text-orange-500 mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-text-tertiary">Entrega Digital</p>
+                    <p className="text-xs font-medium text-green-400">Liberado &mdash; acesse já!</p>
+                    <div className="mt-2 space-y-3">
+                      {Array.from(groups.entries()).map(([key, group]) => (
+                        <div key={key} className="p-2.5 rounded-lg bg-green-500/10 border border-green-500/20">
+                          <p className="text-[10px] font-semibold text-green-400 mb-2 flex items-center gap-1.5">
+                            <Package size={11} />
+                            {group.label}
+                          </p>
+                          <div className="space-y-1.5">
+                            {group.items.map((item, idx) => (
+                              <div key={idx} className="flex items-start gap-1.5">
+                                <span className="text-[9px] text-text-tertiary shrink-0 w-20">{item.label}:</span>
+                                <span className="text-[9px] text-text-primary font-mono break-all">{item.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
-            </div>
+              );
+            })()
           ) : (
             <div className="flex items-start gap-2.5">
               <Send size={13} className="text-orange-500 mt-0.5 shrink-0" />

@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Star, Heart, Share2, ShoppingBag, Check, Shield,
+  Star, Heart, Share2, ShoppingBag, ShoppingCart, Check, Shield,
   ChevronDown, ChevronUp, Minus, Plus, ArrowLeft, Package,
   RefreshCw, MessageCircle, Award, Clock,
 } from "lucide-react";
@@ -28,7 +28,7 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
   const [isFavorite, setIsFavorite] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
-  const { addItem } = useCart();
+  const { addItem, openCartFullPage, totalItems } = useCart();
   const { user } = useAuth();
 
   const reviews = useMemo(() => getReviewsForProduct(product.id), [product.id]);
@@ -73,6 +73,19 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
           </button>
 
           <div className="flex items-center gap-2">
+            <motion.button
+              onClick={openCartFullPage}
+              className="relative p-2 rounded-xl text-text-secondary hover:text-orange-500 hover:bg-orange-500/10 transition-all touch-target"
+              whileTap={{ scale: 0.9 }}
+              aria-label="Carrinho"
+            >
+              <ShoppingCart size={18} />
+              {totalItems > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-orange-500 rounded-full text-[8px] font-bold flex items-center justify-center text-white shadow-sm shadow-orange-500/30">
+                  {totalItems > 9 ? '9+' : totalItems}
+                </span>
+              )}
+            </motion.button>
             <motion.button
               onClick={() => setIsFavorite(!isFavorite)}
               className={`p-2 rounded-xl transition-all touch-target ${isFavorite ? "text-red-500 bg-red-500/10" : "text-text-secondary hover:text-red-400 hover:bg-red-500/5"}`}

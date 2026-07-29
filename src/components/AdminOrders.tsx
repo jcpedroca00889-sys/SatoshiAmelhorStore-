@@ -5,7 +5,7 @@ import {
   XCircle, CreditCard, Clock, X, Check, Send,
   Ban, Copy,
 } from "lucide-react";
-import { type Order, type OrderStatus, ORDER_STATUS_LABELS, updateOrderStatus } from "../data/orders";
+import { type Order, type OrderStatus, type DeliveryContent, ORDER_STATUS_LABELS, updateOrderStatus } from "../data/orders";
 import { getDigitalDelivery, isDigitalProduct } from "../data/deliveries";
 
 const formatPrice = (value: number) =>
@@ -36,7 +36,7 @@ function OrderDetailModal({ order, onClose, onUpdate }: OrderDetailModalProps) {
   const [deliveryNote, setDeliveryNote] = useState(order.deliveryNote || "");
   const [rejectionReason, setRejectionReason] = useState("");
   const [actionLoading, setActionLoading] = useState("");
-  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const handleAction = async (action: string) => {
     setActionLoading(action);
@@ -53,7 +53,14 @@ function OrderDetailModal({ order, onClose, onUpdate }: OrderDetailModalProps) {
         digitalItems.forEach((item) => {
           for (let i = 0; i < item.quantity; i++) {
             const content = getDigitalDelivery(item.productId, i);
-            if (content) deliveryContent!.push(...content);
+            if (content) {
+              const unitNum = item.quantity > 1 ? ` (Unidade ${i + 1})` : "";
+              const gLabel = `${item.productName}${unitNum}`;
+              const gKey = `${item.productId}-${i}`;
+              content.forEach((c) => {
+                deliveryContent!.push({ ...c, groupLabel: gLabel, groupKey: gKey });
+              });
+            }
           }
         });
       }
@@ -89,10 +96,10 @@ function OrderDetailModal({ order, onClose, onUpdate }: OrderDetailModalProps) {
   const isDigital = order.items.some((item) => isDigitalProduct(item.productId));
   const hasDigitalContent = order.deliveryContent && order.deliveryContent.length > 0;
 
-  const copyToClipboard = async (text: string, idx: number) => {
+  const copyToClipboard = async (text: string, id: string) => {
     try { await navigator.clipboard.writeText(text); } catch {}
-    setCopiedIdx(idx);
-    setTimeout(() => setCopiedIdx(null), 2000);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   return (
@@ -167,25 +174,50 @@ function OrderDetailModal({ order, onClose, onUpdate }: OrderDetailModalProps) {
           </div>
 
           {/* Digital Delivery Content */}
-          {hasDigitalContent && (
-            <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <CheckCircle2 size={16} className="text-green-400" />
-                <p className="text-xs font-semibold text-green-400">Conteúdo da Entrega Digital</p>
+          {hasDigitalContent && (() => {
+            // Agrupa por groupKey
+            const groups = new Map<string, { label: string; items: DeliveryContent[] }>();
+            order.deliveryContent!.forEach((dc) => {
+              const key = dc.groupKey || "default";
+              if (!groups.has(key)) {
+                groups.set(key, { label: dc.groupLabel || "Produto Digital", items: [] });
+              }
+              const g = groups.get(key);
+              if (g) g.items.push(dc);
+            });
+            return (
+              <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <CheckCircle2 size={16} className="text-green-400" />
+                  <p className="text-xs font-semibold text-green-400">Conteúdo da Entrega Digital</p>
+                </div>
+                <div className="space-y-3">
+                  {Array.from(groups.entries()).map(([key, group]) => (
+                    <div key={key} className="rounded-lg bg-black/20 border border-green-500/10 p-3">
+                      <p className="text-[10px] font-semibold text-green-400 mb-2 flex items-center gap-1.5">
+                        <Package size={11} />
+                        {group.label}
+                      </p>
+                      <div className="space-y-1.5">
+                        {group.items.map((item, idx) => {
+                          const cid = key + "-" + idx;
+                          return (
+                            <div key={idx} className="flex items-start gap-2">
+                              <span className="text-[11px] text-text-tertiary shrink-0 w-24">{item.label}:</span>
+                              <span className="text-[11px] text-text-primary font-mono break-all flex-1">{item.value}</span>
+                              <button onClick={() => copyToClipboard(item.value, cid)} className="shrink-0 p-0.5 text-text-tertiary hover:text-green-400">
+                                {copiedId === cid ? <Check size={12} /> : <Copy size={12} />}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-2">
-                {order.deliveryContent!.map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-2 px-3 py-2 rounded-lg bg-black/20 border border-green-500/10">
-                    <span className="text-[11px] text-text-tertiary shrink-0 w-24">{item.label}:</span>
-                    <span className="text-[11px] text-text-primary font-mono break-all">{item.value}</span>
-                    <button onClick={() => copyToClipboard(item.value, idx)} className="shrink-0 p-0.5 text-text-tertiary hover:text-green-400">
-                      {copiedIdx === idx ? <Check size={12} /> : <Copy size={12} />}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Tracking / Delivery Note (Physical) */}
           {!isDigital && order.trackingCode && (

@@ -5,7 +5,7 @@ import {
   Clock, CreditCard, CheckCircle2, Loader2,
   ShoppingBag, Truck, AlertCircle, Copy, Check,
 } from "lucide-react";
-import type { Order, OrderStatus } from "../data/orders";
+import type { Order, OrderStatus, DeliveryContent } from "../data/orders";
 
 const statusLabels: Record<OrderStatus, string> = {
   pending: "Aguardando Pagamento",
@@ -67,14 +67,24 @@ function formatDate(iso: string) {
   });
 }
 
-function DigitalDeliveryContent({ deliveryContent }: { deliveryContent: { label: string; value: string }[] }) {
-  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+function DigitalDeliveryContent({ deliveryContent }: { deliveryContent: DeliveryContent[] }) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const copyToClipboard = async (text: string, idx: number) => {
+  const copyToClipboard = async (text: string, id: string) => {
     try { await navigator.clipboard.writeText(text); } catch {}
-    setCopiedIdx(idx);
-    setTimeout(() => setCopiedIdx(null), 2000);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
+
+  // Agrupa por groupKey
+  const groups = new Map<string, { label: string; items: DeliveryContent[] }>();
+  deliveryContent.forEach((dc) => {
+    const key = dc.groupKey || "default";
+    if (!groups.has(key)) {
+      groups.set(key, { label: dc.groupLabel || "Produto Digital", items: [] });
+    }
+    groups.get(key)!.items.push(dc);
+  });
 
   return (
     <motion.div
@@ -87,27 +97,42 @@ function DigitalDeliveryContent({ deliveryContent }: { deliveryContent: { label:
         <CheckCircle2 size={14} />
         Conteúdo da Entrega Digital
       </h3>
-      <div className="space-y-2">
-        {deliveryContent.map((item, idx) => (
-          <div
-            key={idx}
-            className="flex items-center gap-2 p-3 rounded-xl bg-black/20 border border-green-500/10 group"
-          >
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-text-tertiary mb-0.5">{item.label}</p>
-              <p className="text-[12px] text-text-primary font-mono break-all">{item.value}</p>
+      <div className="space-y-3">
+        {Array.from(groups.entries()).map(([key, group]) => (
+          <div key={key} className="rounded-xl bg-black/20 border border-green-500/10 overflow-hidden">
+            <div className="px-3 py-2 bg-green-500/10 border-b border-green-500/10">
+              <p className="text-[11px] font-semibold text-green-400 flex items-center gap-1.5">
+                <Package size={12} />
+                {group.label}
+              </p>
             </div>
-            <button
-              onClick={() => copyToClipboard(item.value, idx)}
-              className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-text-tertiary hover:text-green-400 hover:bg-green-500/10 transition-all"
-            >
-              {copiedIdx === idx ? <Check size={14} /> : <Copy size={14} />}
-            </button>
+            <div className="p-2 space-y-1.5">
+              {group.items.map((item, idx) => {
+                const cid = key + "-" + idx;
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2 p-2.5 rounded-lg hover:bg-black/20 transition-colors group/item"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] text-text-tertiary mb-0.5">{item.label}</p>
+                      <p className="text-[12px] text-text-primary font-mono break-all">{item.value}</p>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(item.value, cid)}
+                      className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-text-tertiary hover:text-green-400 hover:bg-green-500/10 transition-all opacity-0 group-hover/item:opacity-100"
+                    >
+                      {copiedId === cid ? <Check size={13} /> : <Copy size={13} />}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         ))}
       </div>
-      <p className="text-[10px] text-text-tertiary/60 mt-3 text-center">
-        Copie os dados acima para acessar seu produto. Guarde em local seguro.
+      <p className="text-[10px] text-text-tertiary/60 mt-4 text-center">
+        Copie os dados de cada produto para acessar. Guarde em local seguro.
       </p>
     </motion.div>
   );

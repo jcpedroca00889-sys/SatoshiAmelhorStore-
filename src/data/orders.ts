@@ -45,6 +45,10 @@ export const ORDER_STATUS_FLOW: OrderStatus[] = [
 export interface DeliveryContent {
   label: string;
   value: string;
+  /** Nome do produto para agrupar entregas na exibição */
+  groupLabel?: string;
+  /** ID do produto para identificar o grupo */
+  groupKey?: string;
 }
 
 export interface Order {
