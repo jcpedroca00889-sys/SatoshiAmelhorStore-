@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Plus, Pencil, Trash2, X, Download, Upload,
   ChevronLeft, ChevronRight, LogOut,
-  Save, AlertCircle, CheckCircle2, Search, Tags,
+  Save, AlertCircle, CheckCircle2, Search, Tags, Copy,
 } from "lucide-react";
 import { productsData, type Product } from "../data/products";
 
@@ -205,6 +205,13 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
     saveProducts(updated);
     setProducts(updated);
     if (editing?.id === id) setEditing(null);
+  };
+
+  const handleDuplicate = (product: Product) => {
+    const copy = { ...product, id: "", name: product.name + " (cópia)" };
+    setEditing(copy);
+    setIsNew(true);
+    setPage(0);
   };
 
   const handleExport = () => {
@@ -422,6 +429,13 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
                         title="Editar"
                       >
                         <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDuplicate(product)}
+                        className="p-2 rounded-lg glass-card-3d card-shine text-text-secondary hover:text-blue-400"
+                        title="Duplicar"
+                      >
+                        <Copy size={14} />
                       </button>
                       <button
                         onClick={() => handleDelete(product.id)}
