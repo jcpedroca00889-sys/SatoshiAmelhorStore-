@@ -15,9 +15,12 @@ import CartPageFull from "./components/CartPageFull";
 import AuthPage from "./components/AuthPage";
 import CheckoutPage from "./components/CheckoutPage";
 import AdminPage from "./components/AdminPage";
+import ProfilePage from "./components/ProfilePage";
+import OrderDetailPage from "./components/OrderDetailPage";
 import { CartProvider, useCart } from "./contexts/CartContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { productsData } from "./data/products";
+import type { Order } from "./data/orders";
 import type { Product } from "./data/products";
 
 function ScrollProgress() {
@@ -136,7 +139,23 @@ function AppContent({ handleProductSelect, handleCloseDetail, selectedProduct }:
   selectedProduct: Product | null;
 }) {
   const { isCartFullPage, isCheckoutOpen } = useCart();
-  const { isAuthPageOpen } = useAuth();
+  const { isAuthPageOpen, openAuthPage } = useAuth();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  // Listen for open-profile custom event from CheckoutPage
+  useEffect(() => {
+    const handler = () => setIsProfileOpen(true);
+    window.addEventListener("open-profile", handler);
+    return () => window.removeEventListener("open-profile", handler);
+  }, []);
+
+  // Listen for open-auth custom event from ProfilePage (guest login prompt)
+  useEffect(() => {
+    const handler = () => openAuthPage();
+    window.addEventListener("open-auth", handler);
+    return () => window.removeEventListener("open-auth", handler);
+  }, [openAuthPage]);
 
   // Detect /admin path
   const isAdmin = window.location.pathname === "/admin";
@@ -148,9 +167,9 @@ function AppContent({ handleProductSelect, handleCloseDetail, selectedProduct }:
 
   // Lock body scroll when modal/page is open
   useEffect(() => {
-    document.body.style.overflow = isCartFullPage || selectedProduct || isAuthPageOpen || isCheckoutOpen ? "hidden" : "";
+    document.body.style.overflow = isCartFullPage || selectedProduct || isAuthPageOpen || isCheckoutOpen || isProfileOpen || selectedOrder ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [isCartFullPage, selectedProduct, isAuthPageOpen, isCheckoutOpen]);
+  }, [isCartFullPage, selectedProduct, isAuthPageOpen, isCheckoutOpen, isProfileOpen, selectedOrder]);
 
   // Admin mode: render only AdminPage
   if (isAdmin) {
@@ -203,6 +222,30 @@ function AppContent({ handleProductSelect, handleCloseDetail, selectedProduct }:
       <AnimatePresence>
         {isCheckoutOpen && (
           <CheckoutPage />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isProfileOpen && !isCheckoutOpen && (
+          <ProfilePage
+            onClose={(view?: string) => {
+              setIsProfileOpen(false);
+              if (view === "order" && selectedOrder) setSelectedOrder(selectedOrder);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedOrder && !isProfileOpen && (
+          <OrderDetailPage
+            order={selectedOrder}
+            onBack={() => {
+              setSelectedOrder(null);
+              setIsProfileOpen(true);
+            }}
+            onClose={() => setSelectedOrder(null)}
+          />
         )}
       </AnimatePresence>
 

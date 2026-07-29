@@ -5,6 +5,7 @@ interface User {
   id: string;
   name: string;
   username: string;
+  email: string;
 }
 
 interface AuthContextType {
@@ -27,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Restore session from localStorage on mount
   useEffect(() => {
     const saved = getSavedSession();
-    if (saved) setUser(saved);
+    if (saved) setUser(saved as User);
     setLoading(false);
   }, []);
 
@@ -36,13 +37,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     const { user: u } = await signIn(username, password);
-    setUser(u);
+    setUser(u as User);
     return true;
   }, []);
 
   const register = useCallback(async (name: string, username: string, password: string): Promise<boolean> => {
     const { user: u } = await signUp(name, username, password);
-    setUser(u);
+    setUser(u as User);
     return true;
   }, []);
 

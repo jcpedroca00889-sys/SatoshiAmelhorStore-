@@ -19,7 +19,7 @@ export interface DeliveryAddress {
 
 export type OrderStatus =
   | "pending"
-  | "confirmed"
+  | "paid"
   | "preparing"
   | "shipped"
   | "delivered"
@@ -27,7 +27,7 @@ export type OrderStatus =
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "Pendente",
-  confirmed: "Confirmado",
+  paid: "Confirmado",
   preparing: "Preparando",
   shipped: "Enviado",
   delivered: "Entregue",
@@ -36,7 +36,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 
 export const ORDER_STATUS_FLOW: OrderStatus[] = [
   "pending",
-  "confirmed",
+  "paid",
   "preparing",
   "shipped",
   "delivered",

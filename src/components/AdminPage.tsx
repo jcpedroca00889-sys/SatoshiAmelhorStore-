@@ -4,8 +4,12 @@ import {
   LayoutDashboard, Package, Plus, Pencil, Trash2, X, Download, Upload,
   ChevronLeft, ChevronRight, LogOut,
   Save, Eye, AlertCircle, CheckCircle2, Search, Tags, Copy, AlertTriangle, ArrowUp, ArrowDown,
+  ShoppingBag, TrendingUp,
 } from "lucide-react";
 import { productsData, type Product } from "../data/products";
+import { loadOrders, type Order } from "../data/orders";
+import AdminOrders from "./AdminOrders";
+import AdminSales from "./AdminSales";
 
 // ─── Storage keys ───
 const STORAGE_KEY = "satoshi_store_products";
@@ -161,7 +165,7 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
   const [page, setPage] = useState(0);
   const [saved, setSaved] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "categories">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "categories" | "pedidos" | "vendas">("dashboard");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [sortField, setSortField] = useState<string | null>(null);
@@ -169,11 +173,13 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
   const [confirmState, setConfirmState] = useState<{
     title: string; message: string; onConfirm: () => void;
   } | null>(null);
+  const [allOrders, setAllOrders] = useState<Order[]>(loadOrders());
   const PER_PAGE = 10;
 
   useEffect(() => {
     setProducts(loadProducts());
     setCategories(loadCategories());
+    setAllOrders(loadOrders());
   }, []);
 
   const filtered = useMemo(() => {
@@ -474,6 +480,29 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
             Categorias
             <span className="ml-auto text-[10px] bg-surface-3/60 px-1.5 py-0.5 rounded-full">{categories.length}</span>
           </button>
+          <button
+            onClick={() => setActiveTab("pedidos")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              activeTab === "pedidos"
+                ? "glass-card-3d text-orange-500"
+                : "text-text-tertiary hover:text-text-secondary hover:bg-surface-3/30"
+            }`}
+          >
+            <ShoppingBag size={16} />
+            Pedidos
+            <span className="ml-auto text-[10px] bg-surface-3/60 px-1.5 py-0.5 rounded-full">{allOrders.length}</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("vendas")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              activeTab === "vendas"
+                ? "glass-card-3d text-orange-500"
+                : "text-text-tertiary hover:text-text-secondary hover:bg-surface-3/30"
+            }`}
+          >
+            <TrendingUp size={16} />
+            Vendas
+          </button>
         </nav>
 
         <div className="p-3 border-t border-border/30 space-y-1 shrink-0">
@@ -499,11 +528,15 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
               {activeTab === "dashboard" && <LayoutDashboard size={16} className="text-orange-500" />}
               {activeTab === "products" && <Package size={16} className="text-orange-500" />}
               {activeTab === "categories" && <Tags size={16} className="text-orange-500" />}
+              {activeTab === "pedidos" && <ShoppingBag size={16} className="text-orange-500" />}
+              {activeTab === "vendas" && <TrendingUp size={16} className="text-orange-500" />}
             </div>
             <h1 className="text-sm font-semibold text-text-primary">
               {activeTab === "dashboard" && "Dashboard"}
               {activeTab === "products" && "Produtos"}
               {activeTab === "categories" && "Categorias"}
+              {activeTab === "pedidos" && "Pedidos"}
+              {activeTab === "vendas" && "Vendas"}
             </h1>
           </div>
         </header>
@@ -703,6 +736,19 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
               onDelete={handleDeleteCategory}
               onReorder={handleReorderCategory}
             />
+          )}
+
+          {/* Orders Tab */}
+          {activeTab === "pedidos" && (
+            <AdminOrders
+              orders={allOrders}
+              onUpdate={setAllOrders}
+            />
+          )}
+
+          {/* Sales Tab */}
+          {activeTab === "vendas" && (
+            <AdminSales orders={allOrders} />
           )}
         </div>
       </main>

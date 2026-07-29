@@ -1,23 +1,18 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ShoppingBag, Star, Heart, Share2, Check, Shield,
+  Star, Heart, Share2, ShoppingBag, Check, Shield,
   ChevronDown, ChevronUp, Minus, Plus, ArrowLeft, Package,
-  RefreshCw, MessageCircle, Award, Clock,
+  RefreshCw, MessageCircle, Award, Clock, MessageSquare,
 } from "lucide-react";
 import type { Product } from "../data/products";
 import { productsData } from "../data/products";
 import { useCart } from "../contexts/CartContext";
+import { useAuth } from "../contexts/AuthContext";
+import { getReviewsForProduct, getAverageRatingForProduct } from "../data/reviews";
+import ReviewFormModal from "./ReviewFormModal";
 
 type TabType = "descricao" | "detalhes" | "especificacoes" | "reviews";
-
-const reviews = [
-  { id: 1, name: "Rafael M.", avatar: "👨‍💻", rating: 5, date: "2 semanas atrás", title: "Simplesmente incrível!", content: "Produto superou minhas expectativas. A qualidade é excepcional e a entrega foi instantânea. Recomendo para todos!" },
-  { id: 2, name: "Ana L.", avatar: "👩‍🎨", rating: 5, date: "1 mês atrás", title: "Melhor compra do ano", content: "Estou impressionado com a qualidade. Produto veio exatamente como descrito. Atendimento rápido e eficiente." },
-  { id: 3, name: "Carlos S.", avatar: "👨‍💼", rating: 4, date: "3 semanas atrás", title: "Muito bom", content: "Produto excelente no geral. Entregou tudo que prometeu. Recomendo!" },
-  { id: 4, name: "Juliana M.", avatar: "👩‍🎓", rating: 5, date: "1 semana atrás", title: "Recomendo demais!", content: "Comprei para um projeto e superou todas as expectativas. Qualidade nota 10." },
-  { id: 5, name: "Pedro A.", avatar: "👨‍🔧", rating: 4, date: "5 dias atrás", title: "Ótimo custo-benefício", content: "Produto de alta qualidade pelo preço. Entrega muito rápida." },
-];
 
 interface ProductPageProps {
   product: Product;
@@ -31,7 +26,13 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
   const [quantity, setQuantity] = useState(1);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
   const { addItem } = useCart();
+  const { user } = useAuth();
+
+  const reviews = useMemo(() => getReviewsForProduct(product.id), [product.id]);
+  const avgStats = useMemo(() => getAverageRatingForProduct(product.id), [product.id]);
+  const displayRating = avgStats.average || product.rating;
 
   const relatedProducts = useMemo(
     () => productsData.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4),
@@ -189,12 +190,12 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                     <Star
                       key={i}
                       size={14}
-                      className={i < product.rating ? "text-yellow-400 fill-yellow-400" : "text-border"}
+                      className={i < Math.round(displayRating) ? "text-yellow-400 fill-yellow-400" : "text-border"}
                     />
                   ))}
                 </div>
-                <span className="text-xs sm:text-sm text-text-tertiary">{product.rating}.0</span>
-                <span className="text-xs text-text-tertiary">({product.reviewCount} avaliações)</span>
+                <span className="text-xs sm:text-sm text-text-tertiary">{displayRating.toFixed(1)}</span>
+                <span className="text-xs text-text-tertiary">({reviews.length} avaliações)</span>
               </div>
             </div>
 
@@ -408,18 +409,18 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                     {/* Summary */}
                     <div className="flex items-center gap-4 sm:gap-6 p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-surface-3/20 border border-border/30 mb-4 sm:mb-6">
                       <div className="text-center">
-                        <span className="text-3xl sm:text-4xl font-bold text-orange-500">{product.rating}.0</span>
+                        <span className="text-3xl sm:text-4xl font-bold text-orange-500">{displayRating.toFixed(1)}</span>
                         <div className="flex items-center gap-0.5 mt-1 justify-center">
                           {Array.from({ length: 5 }).map((_, i) => (
-                            <Star key={i} size={12} className={i < product.rating ? "text-yellow-400 fill-yellow-400" : "text-border"} />
+                            <Star key={i} size={12} className={i < Math.round(displayRating) ? "text-yellow-400 fill-yellow-400" : "text-border"} />
                           ))}
                         </div>
-                        <span className="text-xs text-text-tertiary mt-1 block">{product.reviewCount} avaliações</span>
+                        <span className="text-xs text-text-tertiary mt-1 block">{reviews.length} avaliações</span>
                       </div>
                       <div className="flex-1 space-y-1.5">
                         {[5, 4, 3, 2, 1].map((star) => {
                           const count = reviews.filter((r) => r.rating === star).length;
-                          const pct = (count / reviews.length) * 100;
+                          const pct = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
                           return (
                             <div key={star} className="flex items-center gap-2 text-xs">
                               <span className="text-text-tertiary w-3">{star}</span>
@@ -434,29 +435,66 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                       </div>
                     </div>
 
+                    {/* Review form trigger */}
+                    {user && (
+                      <button
+                        onClick={() => setShowReviewForm(true)}
+                        className="flex items-center gap-2 px-4 py-2.5 mb-4 rounded-xl glass-card-3d card-shine text-sm font-medium text-text-secondary hover:text-orange-500 transition-all"
+                      >
+                        <MessageSquare size={14} />
+                        Avaliar este produto
+                      </button>
+                    )}
+
                     {/* Reviews list */}
-                    <div className="space-y-3 sm:space-y-4">
-                      {reviews.map((review) => (
-                        <div key={review.id} className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-surface-3/20 border border-border/30 hover:border-orange-500/20 transition-colors">
-                          <div className="flex items-start justify-between gap-3 mb-3">
-                            <div className="flex items-center gap-3">
-                              <span className="text-xl sm:text-2xl flex-shrink-0">{review.avatar}</span>
-                              <div>
-                                <h5 className="text-sm font-medium text-text-primary">{review.name}</h5>
-                                <span className="text-[10px] sm:text-xs text-text-tertiary">{review.date}</span>
+                    {reviews.length === 0 ? (
+                      <div className="text-center py-10 rounded-xl bg-surface-3/10 border border-border/20">
+                        <MessageCircle size={28} className="mx-auto text-text-tertiary mb-3" />
+                        <p className="text-sm text-text-tertiary">Nenhuma avaliação ainda.</p>
+                        <p className="text-xs text-text-tertiary/60 mt-1">Seja o primeiro a avaliar este produto!</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 sm:space-y-4">
+                        {reviews.map((review) => (
+                          <div key={review.id} className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-surface-3/20 border border-border/30 hover:border-orange-500/20 transition-colors">
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-orange-500/15 border border-orange-500/20 flex items-center justify-center text-sm font-bold text-orange-500">
+                                  {review.customerName.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <h5 className="text-sm font-medium text-text-primary">{review.customerName}</h5>
+                                  <span className="text-[10px] sm:text-xs text-text-tertiary">
+                                    {new Date(review.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-0.5 shrink-0">
+                                {Array.from({ length: 5 }).map((_, j) => (
+                                  <Star key={j} size={10} className={j < review.rating ? "text-yellow-400 fill-yellow-400" : "text-border"} />
+                                ))}
                               </div>
                             </div>
-                            <div className="flex items-center gap-0.5 shrink-0">
-                              {Array.from({ length: 5 }).map((_, j) => (
-                                <Star key={j} size={10} className={j < review.rating ? "text-yellow-400 fill-yellow-400" : "text-border"} />
-                              ))}
-                            </div>
+                            <h6 className="text-xs sm:text-sm font-medium text-text-primary mb-1">{review.title}</h6>
+                            <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">{review.content}</p>
                           </div>
-                          <h6 className="text-xs sm:text-sm font-medium text-text-primary mb-1">{review.title}</h6>
-                          <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">{review.content}</p>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Review Form Modal */}
+                    {showReviewForm && (
+                      <ReviewFormModal
+                        productId={product.id}
+                        productName={product.name}
+                        onClose={() => setShowReviewForm(false)}
+                        onSubmitted={() => {
+                          setShowReviewForm(false);
+                          // Force re-render — reviews will update via useMemo
+                          setActiveTab("reviews");
+                        }}
+                      />
+                    )}
                   </div>
                 )}
               </motion.div>
