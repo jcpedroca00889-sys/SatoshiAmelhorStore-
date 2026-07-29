@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Plus, Pencil, Trash2, X, Download, Upload,
   ChevronLeft, ChevronRight, LogOut,
-  Save, Eye, AlertCircle, CheckCircle2, Search, Tags, Copy, AlertTriangle,
+  Save, Eye, AlertCircle, CheckCircle2, Search, Tags, Copy, AlertTriangle, ArrowUp, ArrowDown,
 } from "lucide-react";
 import { productsData, type Product } from "../data/products";
 
@@ -254,6 +254,15 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
   const SortIcon = ({ field }: { field: string }) => {
     if (sortField !== field) return <span className="ml-1 text-text-tertiary/30">↕</span>;
     return <span className="ml-1 text-orange-500">{sortDir === "asc" ? "↑" : "↓"}</span>;
+  };
+
+  const handleReorderCategory = (index: number, direction: "up" | "down") => {
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= categories.length) return;
+    const updated = [...categories];
+    [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
+    saveCategories(updated);
+    setCategories(updated);
   };
 
   const handleDuplicate = (product: Product) => {
@@ -590,6 +599,7 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
             onAdd={handleAddCategory}
             onRename={handleRenameCategory}
             onDelete={handleDeleteCategory}
+            onReorder={handleReorderCategory}
           />
         )}
       </div>
@@ -925,13 +935,14 @@ function ProductFormModal({
 // ════════════════════════════════════════════════════════════
 
 function CategoriesManager({
-  categories, productCounts, onAdd, onRename, onDelete,
+  categories, productCounts, onAdd, onRename, onDelete, onReorder,
 }: {
   categories: string[];
   productCounts: Record<string, number>;
   onAdd: (name: string) => void;
   onRename: (oldName: string, newName: string) => void;
   onDelete: (name: string) => void;
+  onReorder: (index: number, direction: "up" | "down") => void;
 }) {
   const [newName, setNewName] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -1016,7 +1027,23 @@ function CategoriesManager({
                       {productCounts[cat] || 0} produtos
                     </span>
                   </span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
+                    <button
+                      onClick={() => onReorder(i, "up")}
+                      disabled={i === 0}
+                      className="p-1.5 rounded-lg glass-card-3d card-shine text-text-tertiary hover:text-text-primary disabled:opacity-20"
+                      title="Mover para cima"
+                    >
+                      <ArrowUp size={12} />
+                    </button>
+                    <button
+                      onClick={() => onReorder(i, "down")}
+                      disabled={i === categories.length - 1}
+                      className="p-1.5 rounded-lg glass-card-3d card-shine text-text-tertiary hover:text-text-primary disabled:opacity-20"
+                      title="Mover para baixo"
+                    >
+                      <ArrowDown size={12} />
+                    </button>
                     <button
                       onClick={() => handleStartRename(i)}
                       className="p-2 rounded-lg glass-card-3d card-shine text-text-secondary hover:text-orange-500"
