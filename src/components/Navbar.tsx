@@ -279,6 +279,20 @@ export default function Navbar() {
                   </a>
                 );
               })}
+              {/* Cart button on mobile */}
+              <button onClick={openCartFullPage}
+                className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-orange-500 hover:text-orange-500 glass-card-3d card-shine transition-colors min-w-[52px] relative group"
+              >
+                <span className="w-8 h-8 rounded-lg flex items-center justify-center group-hover:bg-orange-500/15 transition-all relative">
+                  <ShoppingCart size={18} className="group-hover:text-orange-500 transition-colors" />
+                  {totalItems > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-orange-500 rounded-full text-[7px] font-bold flex items-center justify-center text-white shadow-sm shadow-orange-500/30">
+                      {totalItems > 9 ? '9+' : totalItems}
+                    </span>
+                  )}
+                </span>
+                <span className="text-[9px] font-medium leading-none text-orange-500">Carrinho</span>
+              </button>
             </div>
           </div>
         </div>
