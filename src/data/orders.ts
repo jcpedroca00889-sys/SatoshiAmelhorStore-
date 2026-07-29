@@ -42,6 +42,11 @@ export const ORDER_STATUS_FLOW: OrderStatus[] = [
   "delivered",
 ];
 
+export interface DeliveryContent {
+  label: string;
+  value: string;
+}
+
 export interface Order {
   id: string;
   customerName: string;
@@ -54,8 +59,12 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
   trackingCode?: string;
+  deliveryNote?: string;
+  deliveryContent?: DeliveryContent[];
   deliveredAt?: string;
   cancelledAt?: string;
+  rejectionReason?: string;
+  paymentApprovedAt?: string;
 }
 
 const ORDERS_KEY = "satoshi_store_orders";
@@ -115,4 +124,22 @@ export function getOrdersStats(orders: Order[]) {
     cancelledOrders,
     statusCounts,
   };
+}
+
+export function updateOrderStatus(
+  orderId: string,
+  newStatus: OrderStatus,
+  extra?: Partial<Pick<Order, "trackingCode" | "deliveryNote" | "deliveryContent" | "rejectionReason" | "paymentApprovedAt" | "deliveredAt" | "cancelledAt">>
+): Order | undefined {
+  const orders = loadOrders();
+  const idx = orders.findIndex((o) => o.id === orderId);
+  if (idx === -1) return undefined;
+  orders[idx] = {
+    ...orders[idx],
+    status: newStatus,
+    updatedAt: new Date().toISOString(),
+    ...extra,
+  };
+  saveOrders(orders);
+  return orders[idx];
 }
