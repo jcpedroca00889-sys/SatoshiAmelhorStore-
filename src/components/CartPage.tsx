@@ -57,7 +57,7 @@ export default function CartPage() {
                   {items.length > 0 && (
                     <motion.button
                       onClick={clearCart}
-                      className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors"
+                      className="px-3 py-1.5 rounded-lg glass-card-3d card-shine text-red-400 text-xs font-medium transition-colors"
                       whileTap={{ scale: 0.95 }}
                     >
                       Limpar
@@ -65,7 +65,7 @@ export default function CartPage() {
                   )}
                   <motion.button
                     onClick={closeCart}
-                    className="p-2 rounded-xl text-text-tertiary hover:text-text-primary hover:bg-surface-3/50 transition-colors"
+                    className="p-2 rounded-xl glass-card-3d card-shine text-text-tertiary hover:text-text-primary transition-colors"
                     whileTap={{ scale: 0.9 }}
                   >
                     <X size={18} />
@@ -88,7 +88,7 @@ export default function CartPage() {
                     </div>
                     <motion.button
                       onClick={closeCart}
-                      className="px-6 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors"
+                      className="px-6 py-2.5 rounded-xl glass-card-3d card-shine text-white text-sm font-medium transition-colors"
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
                     >
@@ -157,7 +157,7 @@ export default function CartPage() {
                           {/* Remove */}
                           <motion.button
                             onClick={() => removeItem(item.product.id)}
-                            className="p-1.5 sm:p-2 rounded-lg text-text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                            className="p-1.5 sm:p-2 rounded-lg glass-card-3d card-shine text-text-tertiary hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
                             whileTap={{ scale: 0.9 }}
                           >
                             <Trash2 size={14} className="sm:size-16" />
@@ -210,7 +210,7 @@ export default function CartPage() {
                       {/* Checkout button */}
                       <motion.button
                         onClick={() => { user ? (openCheckout(), closeCart()) : (closeCart(), openAuthPage()); }}
-                        className="w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl sm:rounded-2xl text-sm sm:text-base transition-all shadow-lg shadow-orange-500/20 touch-target"
+                        className="w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 glass-card-3d card-shine text-white font-semibold rounded-xl sm:rounded-2xl text-sm sm:text-base transition-all touch-target"
                         whileHover={{ scale: 1.01, y: -1 }}
                         whileTap={{ scale: 0.98 }}
                       >

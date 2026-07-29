@@ -46,7 +46,7 @@ export default function CartPageFull() {
       <div className="sticky top-0 z-30 bg-surface/95 backdrop-blur-xl border-b border-border/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
           <button onClick={closeCartFullPage}
-            className="flex items-center gap-2 text-text-secondary hover:text-orange-500 transition-colors touch-target"
+            className="flex items-center gap-2 text-text-secondary hover:text-orange-500 glass-card-3d card-shine transition-colors touch-target"
           >
             <ArrowLeft size={18} />
             <span className="text-sm font-medium">Continuar Comprando</span>
@@ -54,13 +54,13 @@ export default function CartPageFull() {
           <div className="flex items-center gap-2">
             {items.length > 0 && (
               <button onClick={clearCart}
-                className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors"
+                className="px-3 py-1.5 rounded-lg glass-card-3d card-shine text-red-400 text-xs font-medium transition-colors"
               >
                 Limpar Carrinho
               </button>
             )}
             <button onClick={closeCartFullPage}
-              className="p-2 rounded-xl text-text-tertiary hover:text-text-primary hover:bg-surface-3/50 transition-colors"
+              className="p-2 rounded-xl glass-card-3d card-shine text-text-tertiary hover:text-text-primary transition-colors"
             >
               <X size={18} />
             </button>
@@ -95,7 +95,7 @@ export default function CartPageFull() {
               </p>
             </div>
             <motion.button onClick={handleNavigateHome}
-              className="px-6 py-3 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors flex items-center gap-2"
+              className="px-6 py-3 rounded-xl glass-card-3d card-shine text-white text-sm font-medium transition-colors flex items-center gap-2"
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
             >
               Explorar Produtos <ArrowRight size={16} />
@@ -184,7 +184,7 @@ export default function CartPageFull() {
 
                   {/* Remove */}
                   <button onClick={() => removeItem(item.product.id)}
-                    className="p-1.5 sm:p-2 rounded-lg text-text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                    className="p-1.5 sm:p-2 rounded-lg glass-card-3d card-shine text-text-tertiary hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
                   ><Trash2 size={14} /></button>
                 </motion.div>
               ))}
@@ -232,7 +232,7 @@ export default function CartPageFull() {
 
                 <motion.button
                   onClick={user ? openCheckout : openAuthPage}
-                  className="w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl sm:rounded-2xl text-sm sm:text-base transition-all shadow-lg shadow-orange-500/20"
+                  className="w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 glass-card-3d card-shine text-white font-semibold rounded-xl sm:rounded-2xl text-sm sm:text-base transition-all"
                   whileHover={{ scale: 1.01, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                 >

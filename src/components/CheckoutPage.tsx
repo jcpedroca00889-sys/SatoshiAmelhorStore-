@@ -135,7 +135,7 @@ export default function CheckoutPage() {
         <div className="max-w-3xl mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
           <button
             onClick={stepIndex > 0 && !orderDone ? () => goToStep(steps[stepIndex - 1].id) : closeCheckout}
-            className="flex items-center gap-2 text-text-secondary hover:text-orange-500 transition-colors touch-target"
+            className="flex items-center gap-2 text-text-secondary hover:text-orange-500 glass-card-3d card-shine transition-colors touch-target"
           >
             {stepIndex > 0 && !orderDone ? <ArrowLeft size={18} /> : <X size={18} />}
             <span className="text-sm font-medium">
@@ -392,7 +392,7 @@ function StepIdentificacao({
 
         <motion.button
           onClick={onContinue}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold text-sm transition-all shadow-lg shadow-orange-500/20 relative overflow-hidden group"
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl glass-card-3d card-shine text-white font-semibold text-sm transition-all relative overflow-hidden group"
           whileHover={{ scale: 1.01, y: -1 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -472,10 +472,10 @@ function StepPixPagamento({
             <motion.button
               onClick={onCopyPix}
               whileTap={{ scale: 0.9 }}
-              className={`p-2.5 rounded-lg shrink-0 transition-colors ${
+              className={`p-2.5 rounded-lg shrink-0 glass-card-3d card-shine transition-colors ${
                 pixCopied
-                  ? "bg-green-500/20 text-green-400"
-                  : "bg-surface-3/50 text-text-tertiary hover:text-orange-500 hover:bg-orange-500/10"
+                  ? "text-green-400"
+                  : "text-text-tertiary hover:text-orange-500"
               }`}
               aria-label="Copiar código PIX"
             >
@@ -507,13 +507,13 @@ function StepPixPagamento({
             onClick={onBack}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
-            className="flex-1 py-3.5 rounded-xl border border-border/30 text-text-secondary hover:text-text-primary hover:bg-surface-3/30 text-sm font-medium transition-all"
+            className="flex-1 py-3.5 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-text-primary text-sm font-medium transition-all"
           >
             Voltar
           </motion.button>
           <motion.button
             onClick={onProcess}
-            className="flex-[2] flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold text-sm transition-all shadow-lg shadow-orange-500/20 relative overflow-hidden group"
+            className="flex-[2] flex items-center justify-center gap-2 py-3.5 rounded-xl glass-card-3d card-shine text-white font-semibold text-sm transition-all relative overflow-hidden group"
             whileHover={{ scale: 1.01, y: -1 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -702,12 +702,12 @@ function StepSucesso({
           onClick={onClose}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="flex-1 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold text-sm shadow-lg shadow-orange-500/20 relative overflow-hidden group"
+          className="flex-1 py-3 rounded-xl glass-card-3d card-shine text-white font-semibold text-sm relative overflow-hidden group"
         >
           <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
           Continuar Comprando
         </motion.button>
-        <button className="flex-1 py-3 rounded-xl border border-border/30 text-text-secondary hover:text-text-primary hover:bg-surface-3/30 text-sm font-medium transition-all">
+        <button           className="flex-1 py-3 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-text-primary text-sm font-medium transition-all">
           Ver Meus Pedidos
         </button>
       </motion.div>
