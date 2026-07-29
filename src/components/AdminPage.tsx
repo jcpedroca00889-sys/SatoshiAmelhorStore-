@@ -163,6 +163,8 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
   const [categories, setCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"products" | "categories">("products");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const PER_PAGE = 10;
 
   useEffect(() => {
@@ -187,8 +189,24 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
     return result;
   }, [products, search, categoryFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  const paginated = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
+  const sorted = useMemo(() => {
+    if (!sortField) return filtered;
+    const sorted = [...filtered];
+    sorted.sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case "name": cmp = a.name.localeCompare(b.name, "pt-BR"); break;
+        case "price": cmp = a.priceNumber - b.priceNumber; break;
+        case "rating": cmp = a.rating - b.rating || a.reviewCount - b.reviewCount; break;
+        case "category": cmp = a.category.localeCompare(b.category, "pt-BR"); break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [filtered, sortField, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PER_PAGE));
+  const paginated = sorted.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
 
   const handleSave = (product: Product) => {
     let updated: Product[];
@@ -212,6 +230,21 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
     saveProducts(updated);
     setProducts(updated);
     if (editing?.id === id) setEditing(null);
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+    setPage(0);
+  };
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <span className="ml-1 text-text-tertiary/30">↕</span>;
+    return <span className="ml-1 text-orange-500">{sortDir === "asc" ? "↑" : "↓"}</span>;
   };
 
   const handleDuplicate = (product: Product) => {
@@ -410,10 +443,18 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
             ) : (
               <div className="space-y-2">
                 <div className="hidden sm:grid grid-cols-12 gap-3 px-4 py-2 text-[10px] text-text-tertiary uppercase tracking-wider font-medium">
-                  <div className="col-span-4">Produto</div>
-                  <div className="col-span-2">Categoria</div>
-                  <div className="col-span-2">Preço</div>
-                  <div className="col-span-2">Avaliação</div>
+                  <button onClick={() => handleSort("name")} className="col-span-4 flex items-center text-left hover:text-text-primary transition-colors">
+                    Produto <SortIcon field="name" />
+                  </button>
+                  <button onClick={() => handleSort("category")} className="col-span-2 flex items-center text-left hover:text-text-primary transition-colors">
+                    Categoria <SortIcon field="category" />
+                  </button>
+                  <button onClick={() => handleSort("price")} className="col-span-2 flex items-center text-left hover:text-text-primary transition-colors">
+                    Preço <SortIcon field="price" />
+                  </button>
+                  <button onClick={() => handleSort("rating")} className="col-span-2 flex items-center text-left hover:text-text-primary transition-colors">
+                    Avaliação <SortIcon field="rating" />
+                  </button>
                   <div className="col-span-2 text-right">Ações</div>
                 </div>
                 {paginated.map((product) => (
