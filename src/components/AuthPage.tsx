@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Lock, User, Eye, EyeOff, ArrowLeft, ArrowRight,
   Loader2, CheckCircle2,
-  AlertCircle, Shield, LogIn, UserPlus, AtSign, FileText,
+  AlertCircle, Shield, LogIn, UserPlus, AtSign,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import LegalModal from "./LegalModal";
@@ -27,75 +27,96 @@ function getPasswordStrength(pw: string): { score: number; label: string; color:
   return map[score] || map[0];
 }
 
+type AuthStep =
+  | "initial"
+  | "login-username"
+  | "login-password"
+  | "register-name"
+  | "register-username"
+  | "register-password"
+  | "register-confirm"
+  | "register-terms";
+
+const stepInfo: Record<AuthStep, { question: string; desc: string }> = {
+  initial:            { question: "Já tem uma conta?",            desc: "" },
+  "login-username":   { question: "Qual seu username?",           desc: "Digite seu nome de usuário" },
+  "login-password":   { question: "Qual sua senha?",             desc: "Digite sua senha" },
+  "register-name":    { question: "Qual seu nome?",               desc: "Como podemos te chamar?" },
+  "register-username":{ question: "Escolha um username",          desc: "Mínimo de 3 caracteres" },
+  "register-password":{ question: "Crie uma senha",               desc: "Mínimo de 6 caracteres" },
+  "register-confirm": { question: "Confirme a senha",             desc: "Digite a senha novamente" },
+  "register-terms":   { question: "Aceitar os termos?",           desc: "Para criar sua conta" },
+};
+
+const loginSteps: AuthStep[] = ["login-username", "login-password"];
+const registerSteps: AuthStep[] = ["register-name", "register-username", "register-password", "register-confirm", "register-terms"];
+
 export default function AuthPage() {
   const { closeAuthPage, login, register } = useAuth();
 
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [step, setStep] = useState<AuthStep>("initial");
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(null);
 
-  // ─── Escape key to go back ───
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeAuthPage();
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [closeAuthPage]);
+  const info = stepInfo[step];
+  const isLogin = step.startsWith("login");
+  const isRegister = step.startsWith("register");
+  const flow = isLogin ? loginSteps : isRegister ? registerSteps : [];
+  const stepIdx = flow.indexOf(step);
 
-  // ─── Submit handler ───
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const fieldVal = (() => {
+    switch (step) {
+      case "login-username": case "register-username": return username;
+      case "login-password": case "register-password": return password;
+      case "register-name": return name;
+      case "register-confirm": return confirmPassword;
+      default: return "";
+    }
+  })();
+
+  const setField = (v: string) => {
+    switch (step) {
+      case "register-name": setName(v); break;
+      case "login-username": case "register-username": setUsername(v); break;
+      case "login-password": case "register-password": setPassword(v); break;
+      case "register-confirm": setConfirmPassword(v); break;
+    }
+  };
+
+  const canGo = (): boolean => {
+    switch (step) {
+      case "initial": return true;
+      case "login-username": return username.trim().length >= 3;
+      case "login-password": return password.length >= 6;
+      case "register-name": return name.trim().length > 0;
+      case "register-username": return username.trim().length >= 3;
+      case "register-password": return password.length >= 6;
+      case "register-confirm": return confirmPassword.length > 0 && confirmPassword === password;
+      case "register-terms": return acceptedTerms;
+    }
+  };
+
+  const next = async () => {
     setError("");
 
-    if (mode === "register") {
-      if (!name.trim()) {
-        setError("Nome é obrigatório");
-        return;
-      }
-      if (!username.trim()) {
-        setError("Nome de usuário é obrigatório");
-        return;
-      }
-      if (username.trim().length < 3) {
-        setError("Usuário deve ter pelo menos 3 caracteres");
-        return;
-      }
-      if (password.length < 6) {
-        setError("Senha muito curta (mín. 6 caracteres)");
-        return;
-      }
-      if (password !== confirmPassword) {
-        setError("Senhas não conferem");
-        return;
-      }
-      if (!acceptedTerms) {
-        setError("Você precisa aceitar os Termos de Uso e a Política de Privacidade");
-        return;
-      }
-    } else {
-      if (!username.trim()) {
-        setError("Nome de usuário é obrigatório");
-        return;
-      }
-      if (password.length < 6) {
-        setError("Senha deve ter pelo menos 6 caracteres");
-        return;
-      }
-    }
+    if (step === "login-username") { setStep("login-password"); return; }
+    if (step === "register-name") { setStep("register-username"); return; }
+    if (step === "register-username") { setStep("register-password"); return; }
+    if (step === "register-password") { setStep("register-confirm"); return; }
+    if (step === "register-confirm") { setStep("register-terms"); return; }
 
+    // Submit (login-password or register-terms)
     setLoading(true);
     try {
-      if (mode === "login") {
+      if (step === "login-password") {
         await login(username, password);
       } else {
         await register(name, username, password);
@@ -109,25 +130,21 @@ export default function AuthPage() {
     }
   };
 
-  const strength = useMemo(() => getPasswordStrength(password), [password]);
-
-  // ─── Trocar modo diretamente ───
-  const switchMode = (newMode: "login" | "register") => {
-    setMode(newMode);
-    setName("");
-    setUsername("");
-    setPassword("");
-    setConfirmPassword("");
+  const back = () => {
     setError("");
-    setSuccess(false);
-    setShowPassword(false);
-    setShowConfirm(false);
-    setAcceptedTerms(false);
+    switch (step) {
+      case "login-username": setStep("initial"); break;
+      case "login-password": setStep("login-username"); break;
+      case "register-name": setStep("initial"); break;
+      case "register-username": setStep("register-name"); break;
+      case "register-password": setStep("register-username"); break;
+      case "register-confirm": setStep("register-password"); break;
+      case "register-terms": setStep("register-confirm"); break;
+    }
   };
 
-  const toggleMode = () => {
-    switchMode(mode === "login" ? "register" : "login");
-  };
+  const isPasswordStep = step === "login-password" || step === "register-password" || step === "register-confirm";
+  const strength = useMemo(() => getPasswordStrength(password), [password]);
 
   return (
     <motion.div
@@ -137,12 +154,12 @@ export default function AuthPage() {
       transition={{ duration: 0.2 }}
       className="fixed inset-0 z-[70] bg-surface/95 overflow-y-auto"
     >
-      {/* ─── Top Bar ─── */}
+      {/* Top bar */}
       <div className="sticky top-0 z-30 bg-surface/95 backdrop-blur-xl border-b border-border/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
           <button
             onClick={closeAuthPage}
-            className="flex items-center gap-1.5 text-text-secondary hover:text-orange-500 transition-colors touch-target"
+            className="flex items-center gap-1.5 text-text-secondary hover:text-orange-500 transition-colors cursor-pointer"
           >
             <ArrowLeft size={16} />
             <span className="text-xs font-medium">Voltar</span>
@@ -156,59 +173,46 @@ export default function AuthPage() {
         </div>
       </div>
 
-      {/* ─── Main Content ─── */}
+      {/* Main */}
       <div className="relative min-h-[calc(100vh-3rem)] flex items-center justify-center px-4 py-6">
         <div className="w-full max-w-[380px]">
           <div className="relative overflow-hidden rounded-2xl glass-card-3d border border-border/30 shadow-xl">
-            {/* ── Top decorative bar ── */}
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
 
-            {/* ── Content ── */}
             <div className="relative px-5 pt-6 pb-5">
-              {/* ── Mode Tabs ── */}
-              <div className="flex items-center gap-1 mb-5 p-0.5 rounded-lg bg-surface-3/30 border border-border/20">
-                <button
-                  type="button"
-                  onClick={() => switchMode("login")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                    mode === "login"
-                      ? "bg-orange-500/15 text-orange-500 shadow-sm shadow-orange-500/10"
-                      : "text-text-tertiary hover:text-text-secondary hover:bg-surface-3/20"
-                  }`}
-                >
-                  <LogIn size={14} />
-                  Entrar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => switchMode("register")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                    mode === "register"
-                      ? "bg-orange-500/15 text-orange-500 shadow-sm shadow-orange-500/10"
-                      : "text-text-tertiary hover:text-text-secondary hover:bg-surface-3/20"
-                  }`}
-                >
-                  <UserPlus size={14} />
-                  Cadastrar
-                </button>
-              </div>
-
-              {/* ── Header ── */}
-              <div className="text-center mb-4">
+              {/* Header */}
+              <div className="text-center mb-5">
                 <div className="w-10 h-10 mx-auto rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mb-3 shadow-md shadow-orange-500/20">
                   <Shield size={20} className="text-white" />
                 </div>
+
+                {/* Progress bar */}
+                {flow.length > 0 && (
+                  <div className="flex items-center justify-center gap-1 mb-2">
+                    {flow.map((s, i) => (
+                      <div
+                        key={s}
+                        className={`h-1 rounded-full transition-all duration-300 ${
+                          i === stepIdx
+                            ? "w-5 bg-orange-500"
+                            : i < stepIdx
+                            ? "w-1.5 bg-orange-500/40"
+                            : "w-1.5 bg-surface-3"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+
                 <h2 className="text-base sm:text-lg font-bold text-text-primary">
-                  {mode === "login" ? "Bem-vindo de volta" : "Criar sua conta"}
+                  {info.question}
                 </h2>
-                <p className="text-xs text-text-tertiary mt-0.5">
-                  {mode === "login"
-                    ? "Entre com seu usuário e senha"
-                    : "Preencha os dados para se cadastrar"}
-                </p>
+                {info.desc && (
+                  <p className="text-xs text-text-tertiary mt-0.5">{info.desc}</p>
+                )}
               </div>
 
-              {/* ── Error message ── */}
+              {/* Error */}
               {error && (
                 <div className="mb-3 px-3.5 py-2 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center gap-2 text-red-400 text-xs">
                   <AlertCircle size={14} className="shrink-0" />
@@ -216,217 +220,205 @@ export default function AuthPage() {
                 </div>
               )}
 
-              {/* ── Form ── */}
-              <form onSubmit={handleSubmit} className="space-y-3">
-                {/* Name field (register only) */}
-                {mode === "register" && (
-                  <FieldInput
-                    icon={User}
-                    type="text"
-                    placeholder="Seu nome"
-                    value={name}
-                    onChange={setName}
-                  />
-                )}
-
-                {/* Username (both modes) */}
-                <FieldInput
-                  icon={AtSign}
-                  type="text"
-                  placeholder="Nome de usuário"
-                  value={username}
-                  onChange={setUsername}
-                  isValid={username.length >= 3}
-                />
-
-                {/* Password */}
-                <div>
-                  <FieldInput
-                    icon={Lock}
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Sua senha"
-                    value={password}
-                    onChange={setPassword}
-                    isValid={mode === "register" && password.length >= 6}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-surface-3/50 transition-colors"
-                      tabIndex={-1}
-                    >
-                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
-                  </FieldInput>
-
-                  {/* Password strength (register only) */}
-                  {mode === "register" && password.length > 0 && (
-                    <div className="mt-2 space-y-1">
-                      <div className="flex gap-1">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <div
-                            key={i}
-                            className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-                              i < strength.score ? strength.color : "bg-surface-3"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <p className={`text-[10px] ${strength.score <= 2 ? "text-red-400" : strength.score === 3 ? "text-yellow-400" : "text-green-400"}`}>
-                        {strength.label}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Confirm Password (register only) */}
-                {mode === "register" && (
-                  <FieldInput
-                    icon={Lock}
-                    type={showConfirm ? "text" : "password"}
-                    placeholder="Confirmar senha"
-                    value={confirmPassword}
-                    onChange={setConfirmPassword}
-                    isValid={confirmPassword.length > 0 && confirmPassword === password}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirm(!showConfirm)}
-                      className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-surface-3/50 transition-colors"
-                      tabIndex={-1}
-                    >
-                      {showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
-                  </FieldInput>
-                )}
-
-                {/* ── Submit button ── */}
-                <button
-                  type="submit"
-                  disabled={loading || success}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold text-xs disabled:opacity-50 transition-all shadow-md shadow-orange-500/20 cursor-pointer"
+              {/* Step body */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={step}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
                 >
-                  {loading ? (
-                    <Loader2 size={15} className="animate-spin" />
-                  ) : success ? (
-                    <CheckCircle2 size={15} className="text-white" />
-                  ) : (
-                    <>
-                      {mode === "login" ? "Entrar" : "Criar conta"}
-                      <ArrowRight size={14} />
-                    </>
-                  )}
-                </button>
-              </form>
-
-              {/* ── Toggle mode ── */}
-              <div className="mt-4 text-center">
-                <button
-                  type="button"
-                  onClick={toggleMode}
-                  className="group w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-lg bg-surface-3/20 hover:bg-surface-3/40 border border-border/20 hover:border-orange-500/20 transition-all duration-300 cursor-pointer"
-                >
-                  {mode === "login" ? (
-                    <span className="text-xs text-text-tertiary group-hover:text-text-secondary transition-colors">
-                      Não tem uma conta?{" "}
-                      <span className="text-orange-500 group-hover:text-orange-400 font-bold underline underline-offset-4 decoration-orange-500/40 group-hover:decoration-orange-500/70 transition-all">
-                        Cadastre-se grátis
-                      </span>
-                      <ArrowRight size={12} className="inline ml-1 text-orange-500 group-hover:translate-x-1 transition-transform" />
-                    </span>
-                  ) : (
-                    <span className="text-xs text-text-tertiary group-hover:text-text-secondary transition-colors">
-                      Já tem uma conta?{" "}
-                      <span className="text-orange-500 group-hover:text-orange-400 font-bold underline underline-offset-4 decoration-orange-500/40 group-hover:decoration-orange-500/70 transition-all">
-                        Faça login
-                      </span>
-                      <ArrowRight size={12} className="inline ml-1 text-orange-500 group-hover:translate-x-1 transition-transform" />
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              {/* ── Terms Acceptance (register only) ── */}
-              {mode === "register" && (
-                <div className="mt-3 space-y-2.5">
-                  {/* Checkbox de aceite */}
-                  <label className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-surface-3/15 border border-border/20 hover:border-orange-500/20 transition-colors cursor-pointer group">
-                    <div className="relative mt-0.5 shrink-0">
-                      <input
-                        type="checkbox"
-                        checked={acceptedTerms}
-                        onChange={(e) => setAcceptedTerms(e.target.checked)}
-                        className="peer sr-only"
-                      />
-                      <div
-                        className={`w-4 h-4 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
-                          acceptedTerms
-                            ? "bg-orange-500 border-orange-500"
-                            : "border-text-tertiary/40 group-hover:border-orange-500/60"
-                        }`}
-                      >
-                        {acceptedTerms && (
-                          <CheckCircle2 size={12} className="text-white" />
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-text-tertiary group-hover:text-text-secondary transition-colors leading-relaxed">
-                      Li e aceito os{" "}
+                  {step === "initial" ? (
+                    <div className="space-y-3">
                       <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setLegalModal("terms");
-                        }}
-                        className="text-orange-500 hover:text-orange-400 font-medium underline underline-offset-2 decoration-orange-500/40 transition-all"
+                        onClick={() => setStep("login-username")}
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold text-xs transition-all shadow-md shadow-orange-500/20 cursor-pointer"
                       >
-                        Termos de Uso
-                      </button>{" "}
-                      e a{" "}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setLegalModal("privacy");
-                        }}
-                        className="text-orange-500 hover:text-orange-400 font-medium underline underline-offset-2 decoration-orange-500/40 transition-all"
-                      >
-                        Política de Privacidade
+                        <LogIn size={14} />
+                        Sim, já tenho conta
+                        <ArrowRight size={14} />
                       </button>
-                    </span>
-                  </label>
+                      <button
+                        onClick={() => setStep("register-name")}
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-surface-3/20 hover:bg-surface-3/40 border border-border/20 hover:border-orange-500/20 text-text-secondary hover:text-text-primary font-semibold text-xs transition-all cursor-pointer"
+                      >
+                        <UserPlus size={14} />
+                        Não, quero cadastrar
+                        <ArrowRight size={14} />
+                      </button>
+                    </div>
+                  ) : step === "register-terms" ? (
+                    <div className="space-y-4">
+                      <label className="flex items-start gap-2.5 px-3 py-3 rounded-lg bg-surface-3/15 border border-border/20 hover:border-orange-500/20 transition-colors cursor-pointer group">
+                        <div className="relative mt-0.5 shrink-0">
+                          <input
+                            type="checkbox"
+                            checked={acceptedTerms}
+                            onChange={(e) => setAcceptedTerms(e.target.checked)}
+                            className="peer sr-only"
+                          />
+                          <div className={`w-4 h-4 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
+                            acceptedTerms
+                              ? "bg-orange-500 border-orange-500"
+                              : "border-text-tertiary/40 group-hover:border-orange-500/60"
+                          }`}>
+                            {acceptedTerms && <CheckCircle2 size={12} className="text-white" />}
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-text-tertiary group-hover:text-text-secondary transition-colors leading-relaxed">
+                          Li e aceito os{" "}
+                          <button type="button" onClick={(e) => { e.preventDefault(); setLegalModal("terms"); }} className="text-orange-500 hover:text-orange-400 font-medium underline">
+                            Termos de Uso
+                          </button>{" "}
+                          e a{" "}
+                          <button type="button" onClick={(e) => { e.preventDefault(); setLegalModal("privacy"); }} className="text-orange-500 hover:text-orange-400 font-medium underline">
+                            Política de Privacidade
+                          </button>
+                        </span>
+                      </label>
 
-                  {/* Links rápidos para leitura */}
-                  <div className="flex items-center gap-2 justify-center">
-                    <button
-                      type="button"
-                      onClick={() => setLegalModal("terms")}
-                      className="flex items-center gap-1 text-[9px] text-text-tertiary hover:text-orange-500 transition-colors underline underline-offset-2 decoration-border/40"
-                    >
-                      <FileText size={10} />
-                      Ler Termos de Uso
-                    </button>
-                    <span className="text-text-tertiary/30">|</span>
-                    <button
-                      type="button"
-                      onClick={() => setLegalModal("privacy")}
-                      className="flex items-center gap-1 text-[9px] text-text-tertiary hover:text-orange-500 transition-colors underline underline-offset-2 decoration-border/40"
-                    >
-                      <Shield size={10} />
-                      Ler Política de Privacidade
-                    </button>
-                  </div>
+                      <button
+                        onClick={next}
+                        disabled={!canGo() || loading || success}
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold text-xs disabled:opacity-50 transition-all shadow-md shadow-orange-500/20 cursor-pointer"
+                      >
+                        {loading ? (
+                          <Loader2 size={15} className="animate-spin" />
+                        ) : success ? (
+                          <CheckCircle2 size={15} className="text-white" />
+                        ) : (
+                          <>
+                            Criar conta
+                            <ArrowRight size={14} />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Single input */}
+                      {!isPasswordStep ? (
+                        <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border/30 bg-surface-2/30 focus-within:border-orange-500/50 transition-all">
+                          {step === "register-name" ? (
+                            <User size={16} className="shrink-0 text-text-tertiary" />
+                          ) : (
+                            <AtSign size={16} className="shrink-0 text-text-tertiary" />
+                          )}
+                          <input
+                            type="text"
+                            value={fieldVal}
+                            onChange={(e) => setField(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && canGo()) {
+                                e.preventDefault();
+                                next();
+                              }
+                            }}
+                            className="flex-1 bg-transparent text-sm text-text-primary placeholder-text-tertiary/60 focus:outline-none"
+                            placeholder={
+                              step === "register-name" ? "Seu nome" :
+                              step === "login-username" ? "Seu username" :
+                              "Crie um username"
+                            }
+                            autoFocus
+                            autoComplete="off"
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border/30 bg-surface-2/30 focus-within:border-orange-500/50 transition-all">
+                            <Lock size={16} className="shrink-0 text-text-tertiary" />
+                            <input
+                              type={showPw ? "text" : "password"}
+                              value={fieldVal}
+                              onChange={(e) => setField(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && canGo()) {
+                                  e.preventDefault();
+                                  next();
+                                }
+                              }}
+                              className="flex-1 bg-transparent text-sm text-text-primary placeholder-text-tertiary/60 focus:outline-none"
+                              placeholder={
+                                step === "login-password" ? "Sua senha" :
+                                step === "register-password" ? "Crie uma senha" :
+                                "Confirme a senha"
+                              }
+                              autoFocus
+                              autoComplete="off"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPw(!showPw)}
+                              className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-surface-3/50 transition-colors cursor-pointer"
+                              tabIndex={-1}
+                            >
+                              {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                            </button>
+                          </div>
+
+                          {/* Password strength */}
+                          {(step === "register-password" || step === "register-confirm") && password.length > 0 && (
+                            <div className="mt-2 space-y-1">
+                              <div className="flex gap-1">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                  <div key={i} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
+                                    i < strength.score ? strength.color : "bg-surface-3"
+                                  }`} />
+                                ))}
+                              </div>
+                              <p className={`text-[10px] ${strength.score <= 2 ? "text-red-400" : strength.score === 3 ? "text-yellow-400" : "text-green-400"}`}>
+                                {strength.label}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Next / Submit button */}
+                      <button
+                        onClick={next}
+                        disabled={!canGo() || loading || success}
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold text-xs disabled:opacity-50 transition-all shadow-md shadow-orange-500/20 cursor-pointer"
+                      >
+                        {loading ? (
+                          <Loader2 size={15} className="animate-spin" />
+                        ) : success ? (
+                          <CheckCircle2 size={15} className="text-white" />
+                        ) : (
+                          <>
+                            {step === "login-password" ? "Entrar" : "Próximo"}
+                            <ArrowRight size={14} />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Back button */}
+              {step !== "initial" && (
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={back}
+                    className="flex items-center justify-center gap-1 text-[10px] text-text-tertiary hover:text-orange-500 transition-colors w-full cursor-pointer"
+                  >
+                    <ArrowLeft size={12} />
+                    Voltar
+                  </button>
                 </div>
               )}
 
-              {/* ── Success overlay ── */}
+              {/* Success overlay */}
               {success && (
-                <div className="absolute inset-0 rounded-2xl bg-surface/95 backdrop-blur-sm flex flex-col items-center justify-center">
+                <div className="absolute inset-0 rounded-2xl bg-surface/95 backdrop-blur-sm flex flex-col items-center justify-center z-20">
                   <div className="w-10 h-10 rounded-lg bg-green-500/15 flex items-center justify-center mb-2">
                     <CheckCircle2 size={20} className="text-green-400" />
                   </div>
                   <p className="text-xs font-semibold text-text-primary">
-                    {mode === "login" ? "Login feito!" : "Conta criada!"}
+                    {isLogin ? "Login feito!" : "Conta criada!"}
                   </p>
                   <p className="text-[10px] text-text-tertiary mt-0.5">Redirecionando...</p>
                 </div>
@@ -436,180 +428,7 @@ export default function AuthPage() {
         </div>
       </div>
 
-      {/* ── Legal Modal ── */}
       <LegalModal type={legalModal} onClose={() => setLegalModal(null)} />
     </motion.div>
-  );
-}
-
-// ─── Animated Field Input Component ───
-// Cada caractere digitado aparece com animação "pop" individual!
-function FieldInput({
-  icon: Icon,
-  type,
-  placeholder,
-  value,
-  onChange,
-  isValid,
-  children,
-}: {
-  icon: any;
-  type: string;
-  placeholder: string;
-  value: string;
-  onChange: (v: string) => void;
-  isValid?: boolean;
-  children?: React.ReactNode;
-}) {
-  const [focused, setFocused] = useState(false);
-  const [typingPulse, setTypingPulse] = useState(0);
-  const prevLengthRef = useRef(0);
-
-  // Track when characters are added to trigger pulse
-  useEffect(() => {
-    if (value.length !== prevLengthRef.current) {
-      setTypingPulse((p) => p + 1);
-      prevLengthRef.current = value.length;
-    }
-  }, [value]);
-
-  // Split value into characters for individual animation
-  const chars = value.split("");
-
-  return (
-    <div className="relative">
-      <div
-        className={`relative flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-300 ${
-          value
-            ? isValid
-              ? "border-green-500/30 bg-surface-2/40"
-              : "border-border/30 bg-surface-2/30"
-            : "border-border/30 bg-surface-2/30 hover:border-border/60"
-        }`}
-      >
-        <Icon
-          size={13}
-          className={`shrink-0 transition-colors duration-300 ${
-            value && isValid ? "text-green-400" : focused ? "text-orange-500" : "text-text-tertiary"
-          }`}
-        />
-
-        {/* ── Animated characters overlay ── */}
-        <div className="relative flex-1 h-4 overflow-hidden">
-          {/* Actual input (invisible text) */}
-          <input
-            type={type}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            className="absolute inset-0 w-full bg-transparent text-transparent caret-orange-500 focus:outline-none text-xs z-10"
-            placeholder={placeholder}
-            autoComplete="off"
-          />            {/* ── Animated character display ── */}
-          <div className="flex items-center h-full pointer-events-none">
-            {value.length > 0 ? (
-              <AnimatePresence mode="popLayout">
-                {chars.map((char, i) => {
-                  const key = `${i}-${char}`;
-                  // For password fields, show bullet instead of actual character
-                  const displayChar = type === "password" ? "•" : char;
-                  return (
-                    <motion.span
-                      key={key}
-                      layout
-                      initial={{ opacity: 0, y: 12, scale: 0.5, filter: "blur(4px)" }}
-                      animate={{
-                        opacity: 1,
-                        y: 0,
-                        scale: 1,
-                        filter: "blur(0px)",
-                        color: isValid ? "rgb(34, 197, 94)" : "rgb(241, 245, 249)",
-                      }}
-                      exit={{
-                        opacity: 0,
-                        y: -12,
-                        scale: 0.5,
-                        filter: "blur(4px)",
-                        transition: { duration: 0.12 },
-                      }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 28,
-                        mass: 0.5,
-                        delay: i * 0.02,
-                      }}
-                      className="inline-block text-xs font-medium"
-                      style={{
-                        fontFamily: "inherit",
-                        letterSpacing: "0.01em",
-                      }}
-                    >
-                      {displayChar === " " ? "\u00A0" : displayChar}
-                    </motion.span>
-                  );
-                })}
-              </AnimatePresence>
-            ) : (
-              /* Placeholder text (shown when empty) */
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: focused ? 0.4 : 0.5 }}
-                className="text-xs text-text-tertiary/60 pointer-events-none"
-              >
-                {placeholder}
-              </motion.span>
-            )}
-
-            {/* ── Blinking cursor (CSS animation) ── */}
-            {focused && (
-              <span
-                className="inline-block w-[1.5px] h-3.5 bg-orange-500 ml-0.5 rounded-full animate-cursor-blink"
-              />
-            )}
-          </div>
-        </div>
-
-        {/* ── Check icon ── */}
-        {value && isValid && (
-          <motion.div
-            initial={{ scale: 0, rotate: -90 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 20 }}
-          >
-            <CheckCircle2 size={11} className="text-green-400 shrink-0" />
-          </motion.div>
-        )}
-
-        {children}
-      </div>
-
-      {/* ── Bottom typing indicator bar ── */}
-      {value.length > 0 && (
-        <motion.div
-          key={typingPulse}
-          initial={{ scaleX: 0, opacity: 1 }}
-          animate={{
-            scaleX: 1,
-            opacity: focused ? 1 : 0.5,
-            transition: { duration: 0.3, ease: "easeOut" },
-          }}
-          className="absolute -bottom-[1px] left-1 right-1 h-[2px] rounded-full bg-gradient-to-r from-orange-500/60 via-orange-400/80 to-orange-500/60 origin-left"
-          style={{ transformOrigin: "left center" }}
-        />
-      )}
-
-      {/* ── Character count (only shows when typing) ── */}
-      {value.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 0.5, y: 0 }}
-          className="absolute -top-2.5 right-1.5 text-[7px] text-text-tertiary font-mono"
-        >
-          {value.length}
-        </motion.div>
-      )}
-    </div>
   );
 }
