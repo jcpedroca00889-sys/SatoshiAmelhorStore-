@@ -17,6 +17,7 @@ import CheckoutPage from "./components/CheckoutPage";
 import AdminPage from "./components/AdminPage";
 import ProfilePage from "./components/ProfilePage";
 import OrderDetailPage from "./components/OrderDetailPage";
+import { CheckCircle2, X } from "lucide-react";
 import { CartProvider, useCart } from "./contexts/CartContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { productsData } from "./data/products";
@@ -138,7 +139,7 @@ function AppContent({ handleProductSelect, handleCloseDetail, selectedProduct }:
   handleCloseDetail: () => void;
   selectedProduct: Product | null;
 }) {
-  const { isCartFullPage, isCheckoutOpen } = useCart();
+  const { isCartFullPage, isCheckoutOpen, addedItemName, clearAddedFeedback } = useCart();
   const { isAuthPageOpen, openAuthPage } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -250,6 +251,32 @@ function AppContent({ handleProductSelect, handleCloseDetail, selectedProduct }:
       </AnimatePresence>
 
       <div className="fixed bottom-0 left-0 right-0 lg:left-72 h-32 bg-gradient-to-t from-surface to-transparent pointer-events-none z-0" />
+
+      {/* ─── Cart Feedback Toast ─── */}
+      <AnimatePresence>
+        {addedItemName && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="fixed bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-[100]"
+          >
+            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl glass border border-green-500/30 bg-green-500/10 shadow-2xl shadow-green-500/10 backdrop-blur-xl whitespace-nowrap">
+              <div className="w-8 h-8 rounded-xl bg-green-500/20 flex items-center justify-center">
+                <CheckCircle2 size={16} className="text-green-400" />
+              </div>
+              <div className="text-left">
+                <p className="text-xs font-semibold text-green-400">Adicionado ao carrinho!</p>
+                <p className="text-[10px] text-text-tertiary max-w-[200px] truncate">{addedItemName}</p>
+              </div>
+              <button onClick={clearAddedFeedback} className="p-1 rounded-lg text-text-tertiary hover:text-text-primary transition-colors">
+                <X size={14} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
