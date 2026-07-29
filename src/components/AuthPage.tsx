@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, type ReactNode } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Lock, User, Eye, EyeOff, ArrowLeft, ArrowRight,
@@ -137,32 +137,6 @@ export default function AuthPage() {
       transition={{ duration: 0.2 }}
       className="fixed inset-0 z-[70] bg-surface/95 overflow-y-auto"
     >
-      {/* ─── Background 3D Floating Shapes ─── */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        {shapes.map((s, i) => (
-          <div
-            key={i}
-            className={`absolute ${s.color} select-none`}
-            style={{
-              left: `${s.x}%`, top: `${s.y}%`,
-              fontSize: s.size, lineHeight: 1,
-            }}
-          >
-            {s.icon}
-          </div>
-        ))}
-        {particles.map((p) => (
-          <div
-            key={p.id}
-            className="absolute rounded-full bg-orange-500/20"
-            style={{
-              left: `${p.x}%`, top: `${p.y}%`,
-              width: p.size, height: p.size,
-            }}
-          />
-        ))}
-      </div>
-
       {/* ─── Top Bar ─── */}
       <div className="sticky top-0 z-30 bg-surface/95 backdrop-blur-xl border-b border-border/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
