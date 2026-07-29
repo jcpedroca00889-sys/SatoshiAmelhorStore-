@@ -318,10 +318,12 @@
 /* ======================== */
 /* 🖱️ CUSTOM CURSOR         */
 /* ======================== */
-/* Esconde o cursor padrão no desktop quando o mouse está presente */
+/* Esconde o cursor padrão no desktop quando o mouse está presente,
+   mas mantém o cursor nativo em elementos que precisam de foco/ clique
+   para não atrapalhar a usabilidade */
 @media (hover: hover) and (pointer: fine) {
   body,
-  body * {
+  body *:not(input):not(textarea):not(select):not([contenteditable]):not(a):not(button):not([role="button"]) {
     cursor: none !important;
   }
 }
