@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, Search, LayoutGrid, HelpCircle, MessageCircle, Info, X, LogOut, LogIn, ArrowRight } from "lucide-react";
+import { ShoppingCart, Search, LayoutGrid, HelpCircle, MessageCircle, Info, X, LogOut, LogIn, ArrowRight, TicketCheck } from "lucide-react";
 import { productsData } from "../data/products";
 import type { Product } from "../data/products";
 import { useCart } from "../contexts/CartContext";
@@ -181,7 +181,14 @@ export default function Navbar() {
                           </div>
                         </div>
                       </div>
-                      <div className="border-t border-border/20 pt-1 px-2 pb-2">
+                      <div className="border-t border-border/20 pt-1 px-2 pb-2 space-y-0.5">
+                        <button
+                          onClick={() => { setUserMenuOpen(false); window.dispatchEvent(new CustomEvent("open-support")); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-text-secondary hover:text-orange-400 hover:bg-orange-500/5 transition-colors"
+                        >
+                          <TicketCheck size={14} />
+                          Meus Tickets
+                        </button>
                         <button
                           onClick={() => { logout(); setUserMenuOpen(false); }}
                           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-text-secondary hover:text-red-400 hover:bg-red-500/5 transition-colors"
@@ -240,6 +247,15 @@ export default function Navbar() {
                   </a>
                 );
               })}
+                      {/* Support button on mobile */}
+              <button onClick={() => window.dispatchEvent(new CustomEvent("open-support"))}
+                className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-text-tertiary hover:text-orange-500 transition-colors min-w-[52px] relative group"
+              >
+                <span className="w-8 h-8 rounded-lg flex items-center justify-center group-hover:bg-orange-500/10 transition-all">
+                  <TicketCheck size={18} className="group-hover:text-orange-500 transition-colors" />
+                </span>
+                <span className="text-[9px] font-medium leading-none">Suporte</span>
+              </button>
               {/* Cart button on mobile */}
               <button onClick={openCartFullPage}
                 className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-orange-500 min-w-[52px] relative group"

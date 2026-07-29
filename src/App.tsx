@@ -17,6 +17,7 @@ import CheckoutPage from "./components/CheckoutPage";
 import AdminPage from "./components/AdminPage";
 import ProfilePage from "./components/ProfilePage";
 import OrderDetailPage from "./components/OrderDetailPage";
+import SupportPage from "./components/SupportPage";
 import { CheckCircle2, X } from "lucide-react";
 import { CartProvider, useCart } from "./contexts/CartContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -109,12 +110,20 @@ function AppContent({ handleProductSelect, handleCloseDetail, selectedProduct }:
   const { isAuthPageOpen, openAuthPage } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isSupportOpen, setIsSupportOpen] = useState(false);
 
   // Listen for open-profile custom event from CheckoutPage
   useEffect(() => {
     const handler = () => setIsProfileOpen(true);
     window.addEventListener("open-profile", handler);
     return () => window.removeEventListener("open-profile", handler);
+  }, []);
+
+  // Listen for open-support custom event
+  useEffect(() => {
+    const handler = () => setIsSupportOpen(true);
+    window.addEventListener("open-support", handler);
+    return () => window.removeEventListener("open-support", handler);
   }, []);
 
   // Listen for open-auth custom event from ProfilePage (guest login prompt)
@@ -134,9 +143,9 @@ function AppContent({ handleProductSelect, handleCloseDetail, selectedProduct }:
 
   // Lock body scroll when modal/page is open
   useEffect(() => {
-    document.body.style.overflow = isCartFullPage || selectedProduct || isAuthPageOpen || isCheckoutOpen || isProfileOpen || selectedOrder ? "hidden" : "";
+    document.body.style.overflow = isCartFullPage || selectedProduct || isAuthPageOpen || isCheckoutOpen || isProfileOpen || selectedOrder || isSupportOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [isCartFullPage, selectedProduct, isAuthPageOpen, isCheckoutOpen, isProfileOpen, selectedOrder]);
+  }, [isCartFullPage, selectedProduct, isAuthPageOpen, isCheckoutOpen, isProfileOpen, selectedOrder, isSupportOpen]);
 
   // Admin mode: render only AdminPage
   if (isAdmin) {
@@ -212,6 +221,13 @@ function AppContent({ handleProductSelect, handleCloseDetail, selectedProduct }:
             }}
             onClose={() => setSelectedOrder(null)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* ─── Support Page ─── */}
+      <AnimatePresence>
+        {isSupportOpen && (
+          <SupportPage onClose={() => setIsSupportOpen(false)} />
         )}
       </AnimatePresence>
 

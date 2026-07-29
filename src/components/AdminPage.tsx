@@ -4,12 +4,18 @@ import {
   LayoutDashboard, Package, Plus, Pencil, Trash2, X, Download, Upload,
   ChevronLeft, ChevronRight, LogOut,
   Save, Eye, AlertCircle, CheckCircle2, Search, Tags, Copy, AlertTriangle, ArrowUp, ArrowDown,
-  ShoppingBag, TrendingUp,
+  ShoppingBag, TrendingUp, TicketCheck, Clock, MessageCircle,
 } from "lucide-react";
 import { productsData, type Product } from "../data/products";
 import { loadOrders, type Order } from "../data/orders";
 import AdminOrders from "./AdminOrders";
 import AdminSales from "./AdminSales";
+import TicketDetail from "./TicketDetail";
+import {
+  type Ticket, type TicketStatus,
+  TICKET_STATUS_LABELS, TICKET_STATUS_COLORS, TICKET_CATEGORIES,
+  getTicketById, loadTickets, getTicketStats,
+} from "../data/tickets";
 
 // ─── Storage keys ───
 const STORAGE_KEY = "satoshi_store_products";
@@ -165,7 +171,7 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
   const [page, setPage] = useState(0);
   const [saved, setSaved] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "categories" | "pedidos" | "vendas">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "categories" | "pedidos" | "vendas" | "tickets">("dashboard");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [sortField, setSortField] = useState<string | null>(null);
@@ -174,12 +180,15 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
     title: string; message: string; onConfirm: () => void;
   } | null>(null);
   const [allOrders, setAllOrders] = useState<Order[]>(loadOrders());
+  const [allTickets, setAllTickets] = useState<Ticket[]>(loadTickets());
+  const [selectedAdminTicket, setSelectedAdminTicket] = useState<Ticket | null>(null);
   const PER_PAGE = 10;
 
   useEffect(() => {
     setProducts(loadProducts());
     setCategories(loadCategories());
     setAllOrders(loadOrders());
+    setAllTickets(loadTickets());
   }, []);
 
   const filtered = useMemo(() => {
@@ -503,6 +512,18 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
             <TrendingUp size={16} />
             Vendas
           </button>
+          <button
+            onClick={() => setActiveTab("tickets")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              activeTab === "tickets"
+                ? "glass-card-3d text-orange-500"
+                : "text-text-tertiary hover:text-text-secondary hover:bg-surface-3/30"
+            }`}
+          >
+            <TicketCheck size={16} />
+            Tickets
+            <span className="ml-auto text-[10px] bg-surface-3/60 px-1.5 py-0.5 rounded-full">{allTickets.filter((t) => t.status !== "closed" && t.status !== "resolved").length}</span>
+          </button>
         </nav>
 
         <div className="p-3 border-t border-border/30 space-y-1 shrink-0">
@@ -530,6 +551,7 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
               {activeTab === "categories" && <Tags size={16} className="text-orange-500" />}
               {activeTab === "pedidos" && <ShoppingBag size={16} className="text-orange-500" />}
               {activeTab === "vendas" && <TrendingUp size={16} className="text-orange-500" />}
+              {activeTab === "tickets" && <TicketCheck size={16} className="text-orange-500" />}
             </div>
             <h1 className="text-sm font-semibold text-text-primary">
               {activeTab === "dashboard" && "Dashboard"}
@@ -537,6 +559,7 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
               {activeTab === "categories" && "Categorias"}
               {activeTab === "pedidos" && "Pedidos"}
               {activeTab === "vendas" && "Vendas"}
+              {activeTab === "tickets" && "Tickets de Suporte"}
             </h1>
           </div>
         </header>
@@ -750,6 +773,14 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
           {activeTab === "vendas" && (
             <AdminSales orders={allOrders} />
           )}
+
+          {/* Tickets Tab */}
+          {activeTab === "tickets" && (
+            <AdminTicketsView
+              tickets={allTickets}
+              onSelectTicket={setSelectedAdminTicket}
+            />
+          )}
         </div>
       </main>
 
@@ -762,6 +793,22 @@ function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
             categories={categories}
             onSave={handleSave}
             onClose={() => { setEditing(null); setIsNew(false); }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Ticket Detail Modal (Admin) */}
+      <AnimatePresence>
+        {selectedAdminTicket && (
+          <TicketDetail
+            ticket={selectedAdminTicket}
+            onBack={() => setSelectedAdminTicket(null)}
+            onClose={() => setSelectedAdminTicket(null)}
+            isAdminView
+            onUpdate={() => {
+              setAllTickets(loadTickets());
+              setSelectedAdminTicket(getTicketById(selectedAdminTicket.id) || null);
+            }}
           />
         )}
       </AnimatePresence>
@@ -1281,6 +1328,138 @@ function DashboardView({ products, categories }: { products: Product[]; categori
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+//  ADMIN TICKETS VIEW
+// ════════════════════════════════════════════════════════════
+
+function AdminTicketsView({ tickets, onSelectTicket }: {
+  tickets: Ticket[];
+  onSelectTicket: (t: Ticket) => void;
+}) {
+  const [filter, setFilter] = useState<TicketStatus | "all">("all");
+  const [searchTxt, setSearchTxt] = useState("");
+
+  const filtered = useMemo(() => {
+    let list = tickets;
+    if (filter !== "all") list = list.filter((t) => t.status === filter);
+    if (searchTxt.trim()) {
+      const q = searchTxt.toLowerCase();
+      list = list.filter((t) =>
+        t.subject.toLowerCase().includes(q) ||
+        t.id.toLowerCase().includes(q) ||
+        t.userName.toLowerCase().includes(q) ||
+        t.userEmail.toLowerCase().includes(q)
+      );
+    }
+    return list.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  }, [tickets, filter, searchTxt]);
+
+  const stats = getTicketStats(tickets);
+
+  const getCategoryIcon = (catId: string) => TICKET_CATEGORIES.find((c) => c.id === catId)?.icon || "📝";
+
+  return (
+    <div className="space-y-4">
+      {/* Stats */}
+      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-text-tertiary">Total: <strong className="text-text-primary">{stats.total}</strong></span>
+        <span className="text-blue-400">Abertos: <strong>{stats.open}</strong></span>
+        <span className="text-orange-400">Andamento: <strong>{stats.inProgress}</strong></span>
+        <span className="text-yellow-400">Aguardando: <strong>{stats.waitingUser}</strong></span>
+        <span className="text-green-400">Resolvidos: <strong>{stats.resolved}</strong></span>
+        <span className="text-text-tertiary">Fechados: <strong>{stats.closed}</strong></span>
+        {stats.urgent > 0 && (
+          <span className="text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full font-semibold">
+            🚨 {stats.urgent} urgente{stats.urgent !== 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+
+      {/* Search + Filter */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl border border-border/30 bg-surface-2/30 focus-within:border-orange-500/50 transition-all">
+          <Search size={14} className="text-text-tertiary shrink-0" />
+          <input type="text" value={searchTxt} onChange={(e) => setSearchTxt(e.target.value)}
+            placeholder="Buscar tickets..."
+            className="w-full bg-transparent text-sm text-text-primary placeholder:text-text-tertiary/60 focus:outline-none"
+          />
+        </div>
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
+          {(["all", "open", "in_progress", "waiting_user", "resolved", "closed"] as const).map((s) => (
+            <button key={s} onClick={() => setFilter(s)}
+              className={`px-2.5 py-1.5 rounded-lg text-[10px] font-medium whitespace-nowrap transition-all ${
+                filter === s
+                  ? s === "all" ? "bg-orange-500/15 text-orange-500 border border-orange-500/30"
+                    : `${TICKET_STATUS_COLORS[s]} border`
+                  : "text-text-tertiary hover:text-text-secondary border border-transparent"
+              }`}
+            >
+              {s === "all" ? "Todos" : TICKET_STATUS_LABELS[s]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* List */}
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center gap-4 py-16">
+          <TicketCheck size={36} className="text-text-tertiary/30" />
+          <p className="text-sm text-text-tertiary">Nenhum ticket encontrado</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((ticket, i) => {
+            const statusStyle = TICKET_STATUS_COLORS[ticket.status];
+            const catIcon = getCategoryIcon(ticket.category);
+            const lastMsg = ticket.messages[ticket.messages.length - 1];
+            const isActive = ticket.status !== "closed" && ticket.status !== "resolved";
+            return (
+              <motion.button
+                key={ticket.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.02 }}
+                onClick={() => onSelectTicket(ticket)}
+                className="w-full text-left glass rounded-xl border border-border/30 p-4 hover:border-orange-500/30 transition-all group"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-lg mt-0.5 shrink-0">{catIcon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium border ${statusStyle}`}>
+                            {TICKET_STATUS_LABELS[ticket.status]}
+                          </span>
+                          <span className="text-[9px] text-text-tertiary font-mono">{ticket.id}</span>
+                          {isActive && <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />}
+                        </div>
+                        <h4 className="text-sm font-semibold text-text-primary line-clamp-1 group-hover:text-orange-500 transition-colors">
+                          {ticket.subject}
+                        </h4>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1.5 text-[10px] text-text-tertiary">
+                      <span className="flex items-center gap-1"><Clock size={10} /> {new Date(ticket.updatedAt).toLocaleDateString("pt-BR")}</span>
+                      <span className="flex items-center gap-1"><MessageCircle size={10} /> {ticket.messages.length}</span>
+                      <span>{ticket.userName}</span>
+                    </div>
+                    {lastMsg && (
+                      <p className="text-[10px] text-text-tertiary/70 line-clamp-1 mt-1.5 pl-0">
+                        Última: {lastMsg.text}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </motion.button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
