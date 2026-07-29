@@ -58,7 +58,7 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
           <button
             onClick={onClose}
-            className="flex items-center gap-2 text-text-secondary hover:text-orange-500 transition-colors touch-target"
+            className="flex items-center gap-2 text-text-secondary hover:text-orange-500 glass-card-3d card-shine transition-colors touch-target"
           >
             <ArrowLeft size={18} />
             <span className="text-sm font-medium hidden sm:inline">Voltar</span>
@@ -67,12 +67,12 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
           <div className="flex items-center gap-2">
             <motion.button
               onClick={() => setIsFavorite(!isFavorite)}
-              className={`p-2 rounded-xl transition-all touch-target ${isFavorite ? "text-red-500 bg-red-500/10" : "text-text-secondary hover:text-red-400"}`}
+              className={`p-2 rounded-xl glass-card-3d card-shine transition-all touch-target ${isFavorite ? "text-red-500" : "text-text-secondary hover:text-red-400"}`}
               whileTap={{ scale: 0.9 }}
             >
               <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
             </motion.button>
-            <motion.button className="p-2 rounded-xl text-text-secondary hover:text-orange-500 transition-colors touch-target" whileTap={{ scale: 0.9 }}>
+            <motion.button className="p-2 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-orange-500 transition-colors touch-target" whileTap={{ scale: 0.9 }}>
               <Share2 size={18} />
             </motion.button>
           </div>
@@ -118,13 +118,13 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                 <>
                   <button
                     onClick={() => setSelectedImage((prev) => (prev === 0 ? product.gallery.length - 1 : prev - 1))}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center text-text-secondary hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass-card-3d card-shine flex items-center justify-center text-text-secondary hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <ChevronDown size={20} className="rotate-90" />
                   </button>
                   <button
                     onClick={() => setSelectedImage((prev) => (prev === product.gallery.length - 1 ? 0 : prev + 1))}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center text-text-secondary hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass-card-3d card-shine flex items-center justify-center text-text-secondary hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <ChevronDown size={20} className="-rotate-90" />
                   </button>
@@ -291,7 +291,7 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
 
               <motion.button
                 onClick={() => addItem(product, quantity)}
-                className="flex-1 flex items-center justify-center gap-2 py-3 sm:py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl sm:rounded-2xl text-sm sm:text-base transition-all shadow-lg shadow-orange-500/20 touch-target"
+                className="flex-1 flex items-center justify-center gap-2 py-3 sm:py-3.5 glass-card-3d card-shine text-white font-semibold rounded-xl sm:rounded-2xl text-sm sm:text-base transition-all touch-target"
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -318,7 +318,7 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
               <motion.button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`relative px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base font-medium whitespace-nowrap transition-colors touch-target ${
+                className={`relative px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base font-medium whitespace-nowrap glass-card-3d card-shine transition-colors touch-target ${
                   activeTab === tab.key ? "text-orange-500" : "text-text-tertiary hover:text-text-secondary"
                 }`}
                 whileTap={{ scale: 0.97 }}
@@ -485,7 +485,7 @@ export default function ProductPage({ product, onClose, onProductSelect }: Produ
                   transition={{ delay: i * 0.05 }}
                   className="group text-left"
                 >
-                  <div className="glass rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300 group-hover:border-orange-500/30 group-hover:shadow-lg group-hover:shadow-orange-500/5">
+                  <div className="glass-card-3d card-shine rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300 group-hover:border-orange-500/30 group-hover:shadow-lg group-hover:shadow-orange-500/5">
                     <div className="aspect-square flex items-center justify-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundColor: rel.color + "15" }}>
                       <span className="text-3xl sm:text-4xl">{rel.image}</span>
                     </div>

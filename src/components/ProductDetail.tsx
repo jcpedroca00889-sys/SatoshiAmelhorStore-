@@ -66,7 +66,7 @@ export default function ProductDetail({ product, onClose }: ProductDetailProps) 
         {/* Close - fixo no topo em mobile */}
         <motion.button
           onClick={onClose}
-          className="sticky sm:absolute top-3 left-3 sm:top-4 sm:right-4 sm:left-auto z-20 p-2 sm:p-2.5 rounded-xl bg-surface/80 backdrop-blur-sm text-text-secondary hover:text-orange-500 transition-all duration-300 float-right sm:float-none mr-3 sm:mr-0 touch-target"
+          className="sticky sm:absolute top-3 left-3 sm:top-4 sm:right-4 sm:left-auto z-20 p-2 sm:p-2.5 rounded-xl glass-card-3d card-shine text-text-secondary hover:text-orange-500 transition-all duration-300 float-right sm:float-none mr-3 sm:mr-0 touch-target"
           whileTap={{ scale: 0.9 }}
           aria-label="Fechar"
         >
@@ -98,16 +98,16 @@ export default function ProductDetail({ product, onClose }: ProductDetailProps) 
 
               {/* Actions overlay */}
               <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex gap-1.5 sm:gap-2">
-                <motion.button className="p-2 sm:p-2.5 rounded-xl bg-black/40 backdrop-blur-sm text-white/70 hover:text-red-400 transition-all duration-300 touch-target" whileTap={{ scale: 0.9 }}>
+                <motion.button className="p-2 sm:p-2.5 rounded-xl glass-card-3d card-shine text-white/70 hover:text-red-400 transition-all duration-300 touch-target" whileTap={{ scale: 0.9 }}>
                   <Heart size={14} className="sm:size-4" />
                 </motion.button>
-                <motion.button className="p-2 sm:p-2.5 rounded-xl bg-black/40 backdrop-blur-sm text-white/70 hover:text-white transition-all duration-300 touch-target" whileTap={{ scale: 0.9 }}>
+                <motion.button className="p-2 sm:p-2.5 rounded-xl glass-card-3d card-shine text-white/70 hover:text-white transition-all duration-300 touch-target" whileTap={{ scale: 0.9 }}>
                   <Share2 size={14} className="sm:size-4" />
                 </motion.button>
               </div>
 
               <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
-                <span className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-medium bg-surface/80 backdrop-blur-sm text-text-primary">
+                <span className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-medium glass-card-3d card-shine text-text-primary">
                   {product.category}
                 </span>
               </div>
@@ -171,7 +171,7 @@ export default function ProductDetail({ product, onClose }: ProductDetailProps) 
                     <motion.button
                       key={tab.key}
                       onClick={() => setActiveTab(tab.key)}
-                      className={`relative px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg whitespace-nowrap transition-colors shrink-0 touch-target ${
+                      className={`relative px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg whitespace-nowrap glass-card-3d card-shine transition-colors shrink-0 touch-target ${
                         activeTab === tab.key ? "text-text-primary" : "text-text-secondary hover:text-text-primary"
                       }`}
                       whileTap={{ scale: 0.97 }}
@@ -289,7 +289,7 @@ export default function ProductDetail({ product, onClose }: ProductDetailProps) 
                   </motion.button>
                 </div>
 
-                <motion.button className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg sm:rounded-xl text-sm sm:text-base transition-all touch-target" whileTap={{ scale: 0.98 }}>
+                <motion.button className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3.5 glass-card-3d card-shine text-white font-medium rounded-lg sm:rounded-xl text-sm sm:text-base transition-all touch-target" whileTap={{ scale: 0.98 }}>
                   <ShoppingBag size={16} className="sm:size-[18px]" />
                   Adicionar
                 </motion.button>
@@ -304,7 +304,7 @@ export default function ProductDetail({ product, onClose }: ProductDetailProps) 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {relatedProducts.filter((p) => p.id !== product.id).slice(0, 4).map((rel, i) => (
               <motion.a key={rel.id} href={`#${rel.id}`} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.06 }} className="group">
-                <div className="glass rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300 group-hover:border-orange-500/30">
+                <div className="glass-card-3d card-shine rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300 group-hover:border-orange-500/30">
                   <div className="aspect-square flex items-center justify-center" style={{ backgroundColor: rel.color + "15" }}>
                     <span className="text-3xl sm:text-4xl">{rel.image}</span>
                   </div>
