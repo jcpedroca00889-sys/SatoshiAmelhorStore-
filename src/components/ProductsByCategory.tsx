@@ -415,9 +415,9 @@ function sortProducts(products: typeof productsData, sort: SortOption): typeof p
 
 // ==================== Category Filter Bar ====================
 const categoryIcons: Record<string, string> = {
-  Áudio: "🎧", Wearables: "⌚", Câmeras: "📷", Computadores: "💻",
-  Games: "🎮", Smartphones: "📱", Streaming: "🎬", Produtividade: "🤖",
-  Design: "🎨", Educação: "📚", Segurança: "🔒", Cloud: "☁️", Assinaturas: "📋",
+  Streaming: "🎬", Produtividade: "🤖",
+  Design: "🎨", Educação: "📚", Segurança: "🔒", Cloud: "☁️",
+  Assinaturas: "📋", Cursos: "📖", Software: "💿", "Gift Cards": "🎁",
 };
 
 interface CategoryFilterBarProps {
